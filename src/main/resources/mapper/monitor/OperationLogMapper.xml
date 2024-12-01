@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gltqe.wladmin.monitor.mapper.OperationLogMapper">
+    <select id="page" resultType="com.gltqe.wladmin.monitor.entity.vo.OperationLogVo">
+        select
+        lo.*,
+        su.cn_name,
+        sd.name deptName
+        from log_operation lo
+        left join sys_user su on lo.operator = su.username
+        left join sys_dept sd on lo.dept_id = sd.id
+        <where>
+            <if test="operationLogVo.name!=null and operationLogVo.name!=''">
+                and su.cn_name like CONCAT('%',#{operationLogVo.name} ,'%')
+            </if>
+            <if test="operationLogVo.operator!=null and operationLogVo.operator!=''">
+                and lo.operator like CONCAT('%',#{operationLogVo.operator} ,'%')
+            </if>
+            <if test="operationLogVo.deptId!=null and operationLogVo.deptId!=''">
+                and lo.dept_id = #{operationLogVo.deptId}
+            </if>
+            <if test="operationLogVo.startDateTime!=null and operationLogVo.startDateTime!=''">
+                and lo.response_time >= #{operationLogVo.startDateTime}
+            </if>
+            <if test="operationLogVo.endDateTime!=null and operationLogVo.endDateTime!=''">
+                and lo.response_time <![CDATA[<=]]> #{operationLogVo.endDateTime}
+            </if>
+        </where>
+        order by lo.response_time desc
+    </select>
+
+</mapper>

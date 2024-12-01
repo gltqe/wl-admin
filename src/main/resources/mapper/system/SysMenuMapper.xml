@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gltqe.wladmin.system.mapper.SysMenuMapper">
+
+    <select id="getAllMenus" resultType="com.gltqe.wladmin.system.entity.vo.SysMenuVo">
+        select
+        distinct m.id,
+        m.parent_id,
+        m.name,
+        m.path,
+        m.component,
+        m.component_name,
+        m.type,
+        m.permission,
+        m.sort,
+        m.icon_type,
+        m.status
+        from sys_menu m
+        <where>
+            m.is_delete = 0
+            <if test="params.name !=null and params.name!=''">
+                and m.name like concat('%',#{params.name},'%')
+            </if>
+            <if test="params.type !=null and params.type!=''">
+                and m.type=#{params.type}
+            </if>
+            <if test="params.status!=null and params.status!=''">
+                and m.status = #{params.status}
+            </if>
+        </where>
+        order by m.sort
+    </select>
+    <select id="getMenuPermission" resultType="com.gltqe.wladmin.system.entity.vo.SysMenuVo">
+        select distinct m.id,
+                        m.parent_id,
+                        m.name,
+                        m.path,
+                        m.component,
+                        m.component_name,
+                        m.type,
+                        m.permission,
+                        m.sort,
+                        m.icon_type,
+                        m.status
+        from sys_menu m
+                 join sys_role_menu rm on m.id = rm.mid
+                 join sys_role r on rm.rid = r.id
+                 join sys_role_user ru on r.id = ru.rid
+                 join sys_user u on ru.uid = u.id
+        where u.id = #{userId}
+          and m.is_delete = 0
+          and m.status = 0
+          and r.is_delete = 0
+          and r.status = 0
+          and u.is_delete = 0
+          and u.status = 0
+        order by m.sort
+    </select>
+    <select id="getMenuByUser" resultType="com.gltqe.wladmin.system.entity.vo.SysMenuVo">
+        select
+        distinct m.id,
+        m.parent_id,
+        m.name,
+        m.path,
+        m.component,
+        m.component_name,
+        m.type,
+        m.permission,
+        m.sort,
+        m.icon_type,
+        m.status
+        from sys_menu m
+        join sys_role_menu rm on m.id = rm.mid
+        join sys_role r on rm.rid = r.id
+        join sys_role_user ru on r.id = ru.rid
+        join sys_user u on ru.uid = u.id
+        <where>
+            u.id = #{userId}
+            and m.is_delete = 0
+            and r.is_delete = 0
+            and r.status = 0
+            and u.is_delete = 0
+            and u.status = 0
+            <if test="params.name !=null and params.name!=''">
+                and m.name like concat('%',#{params.name},'%')
+            </if>
+            <if test="params.type !=null ">
+                and m.type=#{params.type}
+            </if>
+            <if test="params.status !=null">
+                and m.status=#{params.status}
+            </if>
+        </where>
+        order by m.sort
+    </select>
+</mapper>
