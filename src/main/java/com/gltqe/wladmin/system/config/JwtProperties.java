@@ -5,6 +5,7 @@ import cn.hutool.jwt.signers.JWTSignerUtil;
 import com.gltqe.wladmin.commons.utils.RsaUtil;
 import jakarta.annotation.PostConstruct;
 import lombok.Data;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
@@ -55,7 +56,7 @@ public class JwtProperties {
     /**
      * 对称秘钥
      */
-    private byte [] secretByte;
+    private byte[] secretByte;
 
     /**
      * 私钥
@@ -68,10 +69,16 @@ public class JwtProperties {
     private PublicKey pub;
 
     @PostConstruct
-    public void init(){
-        pri = RsaUtil.string2PrivateKey(priSecret);
-        pub = RsaUtil.string2PublicKey(pubSecret);
-        secretByte = secret.getBytes(StandardCharsets.UTF_8);
+    public void init() {
+
+        if (StringUtils.isNotBlank(priSecret) && StringUtils.isNotBlank(pubSecret)) {
+            pri = RsaUtil.string2PrivateKey(priSecret);
+            pub = RsaUtil.string2PublicKey(pubSecret);
+        }
+
+        if (StringUtils.isNotBlank(secret)) {
+            secretByte = secret.getBytes(StandardCharsets.UTF_8);
+        }
     }
 
     public JWTSigner getSigner() {
@@ -86,27 +93,27 @@ public class JwtProperties {
         };
     }
 
-    public JWTSigner getHs256Signer(){
+    public JWTSigner getHs256Signer() {
         return JWTSignerUtil.hs256(secretByte);
     }
 
-    public JWTSigner getHs384Signer(){
+    public JWTSigner getHs384Signer() {
         return JWTSignerUtil.hs384(secretByte);
     }
 
-    public JWTSigner getHs512Signer(){
+    public JWTSigner getHs512Signer() {
         return JWTSignerUtil.hs512(secretByte);
     }
 
-    public JWTSigner getRs256Signer(){
+    public JWTSigner getRs256Signer() {
         return JWTSignerUtil.rs256(pri);
     }
 
-    public JWTSigner getRs384Signer(){
+    public JWTSigner getRs384Signer() {
         return JWTSignerUtil.rs384(pri);
     }
 
-    public JWTSigner getRs512Signer(){
+    public JWTSigner getRs512Signer() {
         return JWTSignerUtil.rs512(pri);
     }
 }

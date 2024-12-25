@@ -15,7 +15,7 @@ spring:
         #连接将被测试活动的最大时间量
         validation-timeout: 30000
         #连接允许在池中闲置的最长时间
-        idle-timeout: 30000
+        idle-timeout: 300000
       primary: localhost
       datasource:
         localhost:
@@ -44,26 +44,6 @@ spring:
           max-idle: 20
           #连接池中的最小空闲连接
           min-idle: 2
-# token
-token:
-  # accessToken过期时间 2小时
-  access-ttl: 7200
-  # refreshToken过期时间 30天
-  refresh-ttl: 2592000
-  # 加密方式 支持 hs256 hs384 hs512 rs256 rs384 rs512 需要改为getSigner
-  type: hs256
-  # 对称秘钥
-  secret: MTIzNDU2
-  # 非对称秘钥 私钥
-  pri-secret: MIICeAIBADANBgkqhkiG9w0BAQEFAASCAmIwggJeAgEAAoGBAMAXtKHp5hbUhbsy3yNPc73mFo1kZIGn8ByRJyDwL9InSaorc48U3eAFqTJjnE5mhTebya+s/WtjzhDZJmhJvnr14P2Rn557UfmvM/oKto/CgEpuRXUmBDrYK9rdvIB0K13Ajk4PrexaG3qFXphtLf0eaFICuVQrwypjybDgrivJAgMBAAECgYEAkOTQsZkWn33q6ctzmNTjfwhBVqG1Vj9w1HuAwk2qJKDR5fQklHau7b4XZBTS4ChgsBNozIR2Gz0LQJYrbFrDu/ffyFzHJMqdx+GAvj5D7dPBKPyO51kOqQcCgzKUDX3SljR+R91zdULRlW/NwJI3Orju6hth94MDueTBtoJKIAECQQD1UWP8LKb3HV4Dft7c6yqnr7Hs713+41eiB+ioDYw2kDhJFn2I7c3Bkr5VuzapEgZc4fy+Z7fMP7fEtnsDDpHJAkEAyHUAVckhiXlwk/R+arG4Bsdfum+0UwBwF6lTXYgX5BPeyILNPphValDTS9heHDAydErrJR9VBv56C4ccnV/KAQJBAO8vw1gNxWGtzYuE+RDXbgh/YvDMVo595WTDZ1Hrm6lbprWEazPGAVbamCAI4Huqam/Hm+GeSPOpsKjo7zmEzBkCQQCu2YeiTF9pd7kgBVqjnEMl/pBcogULhU1BBlyGMCiOtFpWUenPWLbgloHIHYHxWoUX9SVo6wySnjQ8i+0ExMIBAkBa4sSaRwZkKUg5Gf+uv3TgToC71XxXD5jWS4C98JUwu9mMkGQBATzJX13Sn6szQ+8DM2/sTgOOiw6S5dPV8MRe
-  # 非对称秘钥 公钥
-  pub-secret: MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDAF7Sh6eYW1IW7Mt8jT3O95haNZGSBp/AckScg8C/SJ0mqK3OPFN3gBakyY5xOZoU3m8mvrP1rY84Q2SZoSb569eD9kZ+ee1H5rzP6CraPwoBKbkV1JgQ62Cva3byAdCtdwI5OD63sWht6hV6YbS39HmhSArlUK8MqY8mw4K4ryQIDAQAB
-
-# 日志设置
-logging:
-  # 设置文件，可以是绝对路径，也可以是相对路径
-  file:
-    path: .\log
 
 #mybatis-plus 配置
 mybatis-plus:
@@ -71,6 +51,21 @@ mybatis-plus:
     #打印日志 生产环境需关闭 影响效率
     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
 #  mapper-locations: classpath*:com/**/mapper/*Mapper.xml
+
+# token
+token:
+  # accessToken过期时间 2小时
+  access-ttl: 7200
+  # refreshToken过期时间 30天
+  refresh-ttl: 2592000
+  # 对称秘钥
+  secret: MTIzNDU2
+
+# 日志设置
+logging:
+  # 设置文件，可以是绝对路径，也可以是相对路径
+  file:
+    path: .\log
 
 # 上传地址 可改为nginx代理
 upload:
