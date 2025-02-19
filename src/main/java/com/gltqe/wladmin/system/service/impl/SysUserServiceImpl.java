@@ -19,7 +19,10 @@ import com.gltqe.wladmin.system.entity.dto.PasswordDto;
 import com.gltqe.wladmin.system.entity.dto.SysUserDto;
 import com.gltqe.wladmin.system.entity.po.*;
 import com.gltqe.wladmin.system.entity.vo.SysUserVo;
-import com.gltqe.wladmin.system.mapper.*;
+import com.gltqe.wladmin.system.mapper.SysRoleMapper;
+import com.gltqe.wladmin.system.mapper.SysRoleUserMapper;
+import com.gltqe.wladmin.system.mapper.SysUserMapper;
+import com.gltqe.wladmin.system.mapper.SysUserPositionMapper;
 import com.gltqe.wladmin.system.service.FileInfoService;
 import com.gltqe.wladmin.system.service.SysRoleUserService;
 import com.gltqe.wladmin.system.service.SysUserPositionService;
@@ -438,7 +441,8 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
 
     @Override
     public void exportUser(SysUserDto sysUserDto, HttpServletResponse response) {
-//        List<SysUserVo> list = new ArrayList<>();
+        List<SysUserVo> list = new ArrayList<>();
+
 //        if (ExcelUtil.isTemplate(sysUserVo)) {
 //            ExcelUtil.writeExcel(list, "用户信息", "", response, SysUserVo.class);
 //            return;

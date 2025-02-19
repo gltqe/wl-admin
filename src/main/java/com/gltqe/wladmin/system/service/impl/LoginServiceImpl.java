@@ -8,7 +8,6 @@ import com.gltqe.wladmin.commons.common.ConfigConstant;
 import com.gltqe.wladmin.commons.common.Constant;
 import com.gltqe.wladmin.commons.exception.LoginException;
 import com.gltqe.wladmin.commons.exception.TokenErrorException;
-import com.gltqe.wladmin.commons.exception.TokenExpireException;
 import com.gltqe.wladmin.commons.exception.WlException;
 import com.gltqe.wladmin.commons.utils.IpUtil;
 import com.gltqe.wladmin.commons.utils.JwtUtil;
@@ -212,10 +211,9 @@ public class LoginServiceImpl implements LoginService {
                     userDetail.setPermissionList(permissionList);
 
                     //创建token
-                    String tokenId = IdUtil.fastSimpleUUID();
                     Map<String, Object> map = new HashMap<>(2);
                     map.put("username", username);
-                    map.put("tokenId", tokenId);
+                    map.put("tokenId", IdUtil.fastSimpleUUID());
                     map.put(Constant.TOKEN_TYPE_KEY, Constant.TOKEN_TYPE_ACCESS);
                     String accessToken = JwtUtil.createToken(map, accessTtl);
                     //存入redis
@@ -226,7 +224,7 @@ public class LoginServiceImpl implements LoginService {
                     throw new TokenErrorException("token错误,请重新登录");
                 }
             } else {
-                throw new TokenExpireException("token已过期,请重新登录");
+                throw new TokenErrorException("refresh_token已过期,请重新登录");
             }
         } else {
             throw new TokenErrorException("token异常,请重新登录");
