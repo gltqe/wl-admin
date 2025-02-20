@@ -13,6 +13,7 @@ import com.gltqe.wladmin.commons.enums.UserStatusEnum;
 import com.gltqe.wladmin.commons.exception.LoginException;
 import com.gltqe.wladmin.commons.exception.WlException;
 import com.gltqe.wladmin.commons.utils.EncryptUtil;
+import com.gltqe.wladmin.commons.utils.ExcelUtil;
 import com.gltqe.wladmin.commons.utils.JwtUtil;
 import com.gltqe.wladmin.system.entity.bo.UserDetailsBo;
 import com.gltqe.wladmin.system.entity.dto.PasswordDto;
@@ -31,6 +32,7 @@ import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -441,17 +443,14 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
 
     @Override
     public void exportUser(SysUserDto sysUserDto, HttpServletResponse response) {
+        // 临时修改 todo
         List<SysUserVo> list = new ArrayList<>();
-
-//        if (ExcelUtil.isTemplate(sysUserVo)) {
-//            ExcelUtil.writeExcel(list, "用户信息", "", response, SysUserVo.class);
-//            return;
-//        }
-//        Page<SysUser> page = sysUserDto.getPage();
-//        SysUser sysUser = BeanUtil.copyProperties(sysUserVo, SysUser.class);
-//        Page<SysUserDto> userPage = sysUserMapper.page(page, sysUser);
-//        List<SysUserDto> records = userPage.getRecords();
-//        ExcelUtil.writeExcel();
-
+        List<SysUser> list1 = list();
+        for (SysUser sysUser : list1) {
+            SysUserVo sysUserVo = new SysUserVo();
+            BeanUtils.copyProperties(sysUser,sysUserVo);
+            list.add(sysUserVo);
+        }
+        ExcelUtil.writeExcel(list, "用户信息", "用户信息sheet", response, SysUserVo.class);
     }
 }

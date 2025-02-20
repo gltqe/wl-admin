@@ -3,6 +3,8 @@ package com.gltqe.wladmin.system.entity.vo;
 import com.alibaba.excel.annotation.ExcelIgnoreUnannotated;
 import com.alibaba.excel.annotation.ExcelProperty;
 import com.gltqe.wladmin.commons.base.BaseVo;
+import com.gltqe.wladmin.framework.excel.Dict;
+import com.gltqe.wladmin.framework.excel.ExcelDictConverter;
 import com.gltqe.wladmin.system.entity.po.SysRole;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -30,6 +32,7 @@ public class SysUserVo extends BaseVo {
     /**
      * 用户名
      **/
+    @ExcelProperty("用户名")
     private String username;
 
     /**
@@ -40,26 +43,33 @@ public class SysUserVo extends BaseVo {
     /**
      * 手机号
      **/
+    @ExcelProperty("手机号")
     private String phone;
 
     /**
      * 邮箱
      **/
+    @ExcelProperty("邮箱")
     private String email;
 
     /**
      * 年龄
      **/
+    @ExcelProperty("年龄")
     private Integer age;
 
     /**
      * 性别 0 女 1 男
      **/
+    @Dict(dictCode = "sys_sex")
+    @ExcelProperty(value = "性别",converter = ExcelDictConverter.class)
     private Integer sex;
 
     /**
      * 账号状态 0 正常 1 拉黑  2 停用 3 锁定 4 过期
      **/
+    @Dict(dictCode = "sys_status")
+    @ExcelProperty(value = "状态",converter = ExcelDictConverter.class)
     private String status;
 
     /**

@@ -71,7 +71,7 @@ public class SysUser extends BaseEntity {
      * 性别 0 女 1 男
      **/
     @TableField("sex")
-    private String sex;
+    private Integer sex;
 
     /**
      * 账号状态 0 正常 1 拉黑  2 停用 3 锁定 4 过期

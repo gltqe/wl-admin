@@ -1,6 +1,5 @@
 package com.gltqe.wladmin.framework.security;
 
-import com.gltqe.wladmin.framework.security.filter.JwtAuthenticationFilter;
 import jakarta.annotation.Resource;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;

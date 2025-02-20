@@ -268,10 +268,16 @@ public class Constant {
      * 当前查询（默认）
      */
     public static final String EXPORT_TYPE_QUERY_ALL = "1";
+
     /**
      * 全部
      */
     public static final String EXPORT_TYPE_ALL = "2";
+
+    /**
+     * 勾选数据
+     */
+    public static final String EXPORT_TYPE_SELECT_DATA = "3";
 
     /********************导出类型**********************/
 

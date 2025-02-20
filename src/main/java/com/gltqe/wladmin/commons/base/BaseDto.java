@@ -53,7 +53,7 @@ public class BaseDto<T> {
     private String endDateTime;
 
     /**
-     * 导出类型 0 当前分页 1 当前查询(默认) 2 全部数据
+     * 导出类型 0 当前分页 1 当前查询(默认) 2 全部数据 3 勾选数据
      **/
     private String exportType;
 

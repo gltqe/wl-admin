@@ -1,8 +1,7 @@
-package com.gltqe.wladmin.framework.security.filter;
+package com.gltqe.wladmin.framework.security;
 
 import com.gltqe.wladmin.commons.common.Constant;
 import com.gltqe.wladmin.commons.utils.JwtUtil;
-import com.gltqe.wladmin.framework.security.TokenService;
 import com.gltqe.wladmin.system.entity.bo.UserDetailsBo;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.http.HttpServletRequest;
