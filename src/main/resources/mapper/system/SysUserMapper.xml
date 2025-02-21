@@ -45,7 +45,7 @@
           and u.is_delete = '0'
     </select>
 
-    <select id="page" resultType="com.gltqe.wladmin.system.entity.vo.SysUserVo">
+    <sql id="userListSelect">
         select
         u.id,
         u.cn_name,
@@ -67,6 +67,9 @@
         FROM sys_position sp
         left join sys_user_position sup on sup.pid = sp.id group by uid
         ) pos on pos.uid = u.id
+    </sql>
+
+    <sql id="userListWhere">
         <where>
             u.is_delete = 0
             <if test="params.id != null">
@@ -88,7 +91,29 @@
                 and u.status = #{params.status}
             </if>
         </where>
-        order by u.create_time
+    </sql>
+
+    <select id="page" resultType="com.gltqe.wladmin.system.entity.vo.SysUserVo">
+        <include refid="userListSelect"/>
+        <include refid="userListWhere"/>
+
+    </select>
+
+    <select id="getList" resultType="com.gltqe.wladmin.system.entity.vo.SysUserVo">
+        <include refid="userListSelect"/>
+        <include refid="userListWhere"/>
+    </select>
+
+    <select id="getListByIds" resultType="com.gltqe.wladmin.system.entity.vo.SysUserVo">
+        <include refid="userListSelect"/>
+        <where>
+            <if test="list!=null and list.size()>0">
+                u.id in
+                <foreach collection="list" item="item" open="(" close=")" separator="," index="index">
+                    #{item}
+                </foreach>
+            </if>
+        </where>
     </select>
 
 

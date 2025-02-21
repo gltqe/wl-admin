@@ -61,6 +61,7 @@ public class SysUserVo extends BaseVo {
     /**
      * 性别 0 女 1 男
      **/
+//    @Dict(dictExp = "0=女;1=男")
     @Dict(dictCode = "sys_sex")
     @ExcelProperty(value = "性别",converter = ExcelDictConverter.class)
     private Integer sex;
@@ -105,11 +106,13 @@ public class SysUserVo extends BaseVo {
     /**
      * 部门名称
      **/
+    @ExcelProperty("所属部门")
     private String deptName;
 
     /**
      * 职位名称
      **/
+    @ExcelProperty("职位")
     private String positionName;
 
     /**

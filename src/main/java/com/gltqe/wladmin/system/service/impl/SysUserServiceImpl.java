@@ -9,6 +9,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.gltqe.wladmin.commons.common.Constant;
+import com.gltqe.wladmin.commons.enums.ExportTypeEnum;
 import com.gltqe.wladmin.commons.enums.UserStatusEnum;
 import com.gltqe.wladmin.commons.exception.LoginException;
 import com.gltqe.wladmin.commons.exception.WlException;
@@ -32,7 +33,6 @@ import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -146,13 +146,7 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
         SysUser sysUser = BeanUtil.copyProperties(sysUserDto, SysUser.class);
         Page<SysUserVo> userPage = sysUserMapper.page(page, sysUser);
         List<SysUserVo> records = userPage.getRecords();
-        for (SysUserVo record : records) {
-            String username = record.getUsername();
-            Object o = redisTemplate.opsForValue().get(Constant.LOGIN_LOCK + username);
-            if (Objects.nonNull(o)) {
-                record.setStatus(UserStatusEnum.LOCK.getCode());
-            }
-        }
+        handleLockUser(records);
         return userPage;
     }
 
@@ -393,7 +387,7 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
     /**
      * 修改个人信息
      *
-     * @param sysUserDto 用户信息
+     * @param sysUserDto    用户信息
      * @param multipartFile 头像
      * @author gltqe
      * @date 2022/7/3 2:12
@@ -427,6 +421,39 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
         sysUserMapper.update(null, wrapper);
     }
 
+    /**
+     * 导出用户
+     *
+     * @param sysUserDto
+     * @param response   return
+     * @author gltqe
+     * @date 2025/2/21 15:08
+     */
+    @Override
+    public void exportUser(SysUserDto sysUserDto, HttpServletResponse response) {
+        List<SysUserVo> list = new ArrayList<>();
+        Integer exportType = sysUserDto.getExportType();
+        if (ExportTypeEnum.CURRENT_PAGE.getCode().equals(exportType)) {
+            IPage<SysUserVo> page = page(sysUserDto);
+            list = page.getRecords();
+        } else if (ExportTypeEnum.QUERY_ALL.getCode().equals(exportType)) {
+            sysUserDto.setId(JwtUtil.getUserId());
+            list = baseMapper.getList(sysUserDto);
+        } else if (ExportTypeEnum.ALL.getCode().equals(exportType)) {
+            sysUserDto = new SysUserDto();
+            sysUserDto.setId(JwtUtil.getUserId());
+            list = baseMapper.getList(sysUserDto);
+        } else if (ExportTypeEnum.SELECT_DATA.getCode().equals(exportType)) {
+            List<String> ids = sysUserDto.getIds();
+            if (ids != null && !ids.isEmpty()) {
+                list = baseMapper.getListByIds(ids);
+            }
+        } else {
+            throw new WlException("错误的导出类型");
+        }
+        ExcelUtil.writeExcel(list, "用户信息", "用户信息", response, SysUserVo.class);
+    }
+
     private void checkUsername(String username) {
         if (StringUtils.isBlank(username)) {
             throw new WlException("用户名不能为空");
@@ -441,16 +468,14 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
         }
     }
 
-    @Override
-    public void exportUser(SysUserDto sysUserDto, HttpServletResponse response) {
-        // 临时修改 todo
-        List<SysUserVo> list = new ArrayList<>();
-        List<SysUser> list1 = list();
-        for (SysUser sysUser : list1) {
-            SysUserVo sysUserVo = new SysUserVo();
-            BeanUtils.copyProperties(sysUser,sysUserVo);
-            list.add(sysUserVo);
+    private void handleLockUser(List<SysUserVo> sysUserVoList) {
+        for (SysUserVo record : sysUserVoList) {
+            String username = record.getUsername();
+            Object o = redisTemplate.opsForValue().get(Constant.LOGIN_LOCK + username);
+            if (Objects.nonNull(o)) {
+                record.setStatus(UserStatusEnum.LOCK.getCode());
+            }
         }
-        ExcelUtil.writeExcel(list, "用户信息", "用户信息sheet", response, SysUserVo.class);
     }
+
 }

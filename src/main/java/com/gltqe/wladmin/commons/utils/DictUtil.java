@@ -72,21 +72,8 @@ public class DictUtil {
     }
 
     private static String getTextByDictExp(Dict dict, Object value, boolean cache, int timeout) {
-        String dictExp = dict.dictExp();
-        String[] split = dictExp.split(dict.sepDict());
-        String result = null;
-        Map<String, String> map = new HashMap<>();
-        for (String dictItem : split) {
-            if (StringUtils.isNotBlank(dictItem)) {
-                String[] item = dictItem.split(dict.sepPair());
-                if (String.valueOf(value).equals(item[0])) {
-                    result = item[1];
-                }
-                map.put(item[0], item[1]);
-            }
-        }
-        refreshDictExp(dictExp, map, cache, timeout);
-        return result;
+        Map<String, String> map = refreshDictExp(dict, cache, timeout, false);
+        return value == null ? null : map.get(String.valueOf(value));
     }
 
     private static Map<Object, Object> refreshDictMap(String dictCode, boolean cache, int timeout, boolean reverse) {
@@ -96,30 +83,45 @@ public class DictUtil {
             String s = redisTemplate.opsForValue().get(Constant.DICT_KEY + dictCode);
             if (StringUtils.isNotBlank(s)) {
                 List<SysDictItem> sysDictItems = JSONArray.parseArray(s, SysDictItem.class);
-                Map<Object, Object> map = new HashMap<>();
                 for (SysDictItem sysDictItem : sysDictItems) {
                     if (reverse) {
-                        map.put(sysDictItem.getText(), sysDictItem.getValue());
+                        entries.put(sysDictItem.getText(), sysDictItem.getValue());
                     } else {
-                        map.put(sysDictItem.getValue(), sysDictItem.getText());
+                        entries.put(sysDictItem.getValue(), sysDictItem.getText());
                     }
                 }
                 if (cache && timeout > 0) {
                     redisTemplate.opsForHash().putAll(mapKey, entries);
                     redisTemplate.expire(mapKey, timeout, TimeUnit.SECONDS);
                 }
-                return map;
+                return entries;
             }
         }
         return entries;
     }
 
-    private static void refreshDictExp(String dictExp, Map<String, String> map, boolean cache, int timeout) {
-        if (!map.isEmpty() && cache && timeout > 0) {
-            String expKey = DICT_EXP_KEY + dictExp.hashCode();
-            redisTemplate.opsForHash().putAll(expKey, map);
-            redisTemplate.expire(expKey, timeout, TimeUnit.SECONDS);
+    private static Map<String, String> refreshDictExp(Dict dict, boolean cache, int timeout, boolean reverse) {
+        Map<String, String> map = new HashMap<>();
+        String dictExp = dict.dictExp();
+        if (StringUtils.isNotBlank(dictExp)) {
+            String[] split = dictExp.split(dict.sepDict());
+            for (String dictItem : split) {
+                if (StringUtils.isNotBlank(dictItem)) {
+                    String[] item = dictItem.split(dict.sepPair());
+                    if (reverse) {
+                        map.put(item[1], item[0]);
+                    } else {
+                        map.put(item[0], item[1]);
+                    }
+                }
+            }
+            if (!map.isEmpty() && cache && timeout > 0) {
+                String expKey = DICT_EXP_KEY + dictExp.hashCode();
+                redisTemplate.opsForHash().putAll(expKey, map);
+                redisTemplate.expire(expKey, timeout, TimeUnit.SECONDS);
+            }
         }
+        return map;
     }
 
 }

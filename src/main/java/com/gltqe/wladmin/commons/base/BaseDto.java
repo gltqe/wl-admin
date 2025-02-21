@@ -3,7 +3,7 @@ package com.gltqe.wladmin.commons.base;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.metadata.OrderItem;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.gltqe.wladmin.commons.common.Constant;
+import com.gltqe.wladmin.commons.enums.ExportTypeEnum;
 import lombok.Data;
 import org.apache.commons.lang3.StringUtils;
 
@@ -55,7 +55,12 @@ public class BaseDto<T> {
     /**
      * 导出类型 0 当前分页 1 当前查询(默认) 2 全部数据 3 勾选数据
      **/
-    private String exportType;
+    private Integer exportType;
+
+    /**
+     * 勾选数据的ID
+     **/
+    private List<String> ids;
 
 
     /**
@@ -101,11 +106,11 @@ public class BaseDto<T> {
         return page;
     }
 
-    public String getExportType() {
-        if (StringUtils.isNotBlank(exportType)) {
+    public Integer getExportType() {
+        if (exportType != null) {
             return exportType;
         } else {
-            return Constant.EXPORT_TYPE_QUERY_ALL;
+            return ExportTypeEnum.QUERY_ALL.getCode();
         }
     }
 }
