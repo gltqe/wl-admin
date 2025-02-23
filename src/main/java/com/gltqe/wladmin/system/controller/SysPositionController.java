@@ -5,11 +5,12 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.gltqe.wladmin.commons.common.Constant;
 import com.gltqe.wladmin.commons.common.Result;
-import com.gltqe.wladmin.system.entity.po.SysPosition;
 import com.gltqe.wladmin.system.entity.dto.SysPositionDto;
+import com.gltqe.wladmin.system.entity.po.SysPosition;
 import com.gltqe.wladmin.system.entity.vo.SysPositionVo;
 import com.gltqe.wladmin.system.service.SysPositionService;
 import jakarta.annotation.Resource;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -39,7 +40,7 @@ public class SysPositionController {
      **/
     @RequestMapping("/page")
     @PreAuthorize("@am.hasPermission('position:list:query')")
-    public Result getPositionPageByUser(@RequestBody SysPositionDto sysPositionDto) {
+    public Result page(@RequestBody SysPositionDto sysPositionDto) {
         IPage<SysPosition> iPage = sysPositionService.page(sysPositionDto);
         return Result.ok(iPage);
     }
@@ -134,5 +135,18 @@ public class SysPositionController {
     public Result remove(@RequestBody List<String> ids) {
         sysPositionService.removePosition(ids);
         return Result.ok("删除成功");
+    }
+
+    /**
+     * 导出
+     * @author gltqe
+     * @date 2024/5/13 18:03
+     * @param sysPositionDto
+     * @param response
+     * return
+     */
+    @RequestMapping("/exportPosition")
+    public void exportUser(@RequestBody SysPositionDto sysPositionDto, HttpServletResponse response){
+        sysPositionService.exportPosition(sysPositionDto,response);
     }
 }
