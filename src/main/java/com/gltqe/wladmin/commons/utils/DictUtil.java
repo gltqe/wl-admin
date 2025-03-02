@@ -1,15 +1,14 @@
 package com.gltqe.wladmin.commons.utils;
 
 import com.alibaba.fastjson2.JSONArray;
-import com.gltqe.wladmin.commons.common.Constant;
+import com.alibaba.fastjson2.JSONObject;
+import com.gltqe.wladmin.commons.common.DictConstant;
 import com.gltqe.wladmin.framework.excel.Dict;
 import com.gltqe.wladmin.system.entity.po.SysDictItem;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.redis.core.RedisTemplate;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -19,10 +18,6 @@ import java.util.concurrent.TimeUnit;
 public class DictUtil {
 
     private static final RedisTemplate<String, String> redisTemplate = SpringContextUtil.getBean(RedisTemplate.class);
-
-    private static final String DICT_MAP_KEY = "dictMap:";
-
-    private static final String DICT_EXP_KEY = "dictExp:";
 
     /**
      * 默认map是否缓存
@@ -34,6 +29,12 @@ public class DictUtil {
      */
     private static final int DEFAULT_TIMEOUT = 5;
 
+
+    /**
+     * 默认键值对 code-item
+     */
+    private static final boolean DEFAULT_REVERSE = false;
+
     public static String getDictText(String dictCode, Object value) {
         return getDictText(dictCode, value, DEFAULT_CACHE);
     }
@@ -43,12 +44,8 @@ public class DictUtil {
     }
 
     public static String getDictText(String dictCode, Object value, boolean cache, int timeout) {
-        if (value == null) {
-            return null;
-        }
-        Map<Object, Object> objectMap = refreshDictMap(dictCode, cache, timeout, false);
-        Object o = objectMap.get(String.valueOf(value));
-        return o == null ? null : String.valueOf(o);
+        SysDictItem dictItem = getCacheDictItem(dictCode, value, cache, timeout);
+        return dictItem == null ? null : dictItem.getText();
     }
 
     public static String getDictText(Dict dict, Object value) {
@@ -72,38 +69,63 @@ public class DictUtil {
     }
 
     private static String getTextByDictExp(Dict dict, Object value, boolean cache, int timeout) {
-        Map<String, String> map = refreshDictExp(dict, cache, timeout, false);
+        Map<String, String> map = getDictExp(dict, cache, timeout, false);
         return value == null ? null : map.get(String.valueOf(value));
     }
 
-    private static Map<Object, Object> refreshDictMap(String dictCode, boolean cache, int timeout, boolean reverse) {
-        String mapKey = DICT_MAP_KEY + dictCode;
-        Map<Object, Object> entries = redisTemplate.opsForHash().entries(mapKey);
-        if (entries.isEmpty()) {
-            String s = redisTemplate.opsForValue().get(Constant.DICT_KEY + dictCode);
-            if (StringUtils.isNotBlank(s)) {
-                List<SysDictItem> sysDictItems = JSONArray.parseArray(s, SysDictItem.class);
-                for (SysDictItem sysDictItem : sysDictItems) {
-                    if (reverse) {
-                        entries.put(sysDictItem.getText(), sysDictItem.getValue());
-                    } else {
-                        entries.put(sysDictItem.getValue(), sysDictItem.getText());
-                    }
-                }
-                if (cache && timeout > 0) {
-                    redisTemplate.opsForHash().putAll(mapKey, entries);
-                    redisTemplate.expire(mapKey, timeout, TimeUnit.SECONDS);
-                }
-                return entries;
+    public static SysDictItem getCacheDictItem(String dictCode, Object value, boolean cache, int timeout) {
+        if (value == null) {
+            return null;
+        }
+        Map<String, String> objectMap = getCacheDictMap(dictCode, cache, timeout, false);
+        SysDictItem sysDictItem = JSONObject.parseObject(objectMap.get(String.valueOf(value)), SysDictItem.class);
+        return sysDictItem;
+    }
+
+    private static Map<String, String> getCacheDictMap(String dictCode, boolean cache, int timeout, boolean reverse) {
+        String mapKey = null;
+        if (reverse) {
+            mapKey = DictConstant.DICT_MAP_REVERSE_KEY + dictCode;
+        } else {
+            mapKey = DictConstant.DICT_MAP_KEY + dictCode;
+        }
+        String s = redisTemplate.opsForValue().get(mapKey);
+        if (StringUtils.isNotBlank(s)) {
+            return JSONObject.parseObject(s, Map.class);
+        }
+
+        Map<String, String> entries = new HashMap<>();
+        List<SysDictItem> sysDictItemList = getCache(dictCode);
+        for (SysDictItem sysDictItem : sysDictItemList) {
+            String js = JSONObject.toJSONString(sysDictItem);
+            if (reverse) {
+                entries.put(sysDictItem.getText(), js);
+            } else {
+                entries.put(sysDictItem.getValue(), js);
             }
+        }
+
+        if (cache && timeout > 0) {
+            redisTemplate.opsForValue().set(mapKey, JSONObject.toJSONString(entries), timeout, TimeUnit.SECONDS);
         }
         return entries;
     }
 
-    private static Map<String, String> refreshDictExp(Dict dict, boolean cache, int timeout, boolean reverse) {
+    private static Map<String, String> getDictExp(Dict dict, boolean cache, int timeout, boolean reverse) {
         Map<String, String> map = new HashMap<>();
         String dictExp = dict.dictExp();
         if (StringUtils.isNotBlank(dictExp)) {
+            String expKey = null;
+            if (reverse) {
+                expKey = DictConstant.DICT_EXP_REVERSE_KEY + dictExp.hashCode();
+            } else {
+                expKey = DictConstant.DICT_EXP_KEY + dictExp.hashCode();
+            }
+            String s = redisTemplate.opsForValue().get(expKey);
+            if (StringUtils.isNotBlank(s)) {
+                return JSONObject.parseObject(s, Map.class);
+            }
+
             String[] split = dictExp.split(dict.sepDict());
             for (String dictItem : split) {
                 if (StringUtils.isNotBlank(dictItem)) {
@@ -116,12 +138,33 @@ public class DictUtil {
                 }
             }
             if (!map.isEmpty() && cache && timeout > 0) {
-                String expKey = DICT_EXP_KEY + dictExp.hashCode();
-                redisTemplate.opsForHash().putAll(expKey, map);
-                redisTemplate.expire(expKey, timeout, TimeUnit.SECONDS);
+                redisTemplate.opsForValue().set(expKey, JSONObject.toJSONString(map), timeout, TimeUnit.SECONDS);
             }
         }
         return map;
     }
 
+    public static void removeAllCache() {
+        Set<String> keys = redisTemplate.keys(DictConstant.DICT_KEY + "*");
+        if (keys != null && !keys.isEmpty()) {
+            redisTemplate.delete(keys);
+        }
+    }
+
+    public static void addCache(String dictCode, List<SysDictItem> sysDictItemList) {
+        redisTemplate.opsForValue().set(DictConstant.DICT_KEY + dictCode, JSONArray.toJSONString(sysDictItemList));
+    }
+
+    public static void removeCache(String dictCode) {
+        redisTemplate.delete(DictConstant.DICT_KEY + dictCode);
+    }
+
+    public static List<SysDictItem> getCache(String dictCode) {
+        String s = redisTemplate.opsForValue().get(DictConstant.DICT_KEY + dictCode);
+        if (StringUtils.isNotBlank(s)) {
+            return JSONArray.parseArray(s, SysDictItem.class);
+        } else {
+            return new ArrayList<>();
+        }
+    }
 }

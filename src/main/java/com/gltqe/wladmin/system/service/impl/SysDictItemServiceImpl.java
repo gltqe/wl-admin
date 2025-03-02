@@ -1,19 +1,18 @@
 package com.gltqe.wladmin.system.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
-import com.alibaba.fastjson2.JSONArray;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.gltqe.wladmin.commons.common.Constant;
-import com.gltqe.wladmin.system.entity.po.SysDictItem;
+import com.gltqe.wladmin.commons.utils.DictUtil;
 import com.gltqe.wladmin.system.entity.dto.SysDictItemDto;
+import com.gltqe.wladmin.system.entity.po.SysDictItem;
 import com.gltqe.wladmin.system.mapper.SysDictItemMapper;
 import com.gltqe.wladmin.system.service.SysDictItemService;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,11 +27,9 @@ import java.util.List;
 @Slf4j
 @Service
 public class SysDictItemServiceImpl extends ServiceImpl<SysDictItemMapper, SysDictItem> implements SysDictItemService {
-    @Resource
-    private SysDictItemMapper sysDictItemMapper;
 
     @Resource
-    private RedisTemplate redisTemplate;
+    private SysDictItemMapper sysDictItemMapper;
 
     /**
      * 修改状态
@@ -129,7 +126,7 @@ public class SysDictItemServiceImpl extends ServiceImpl<SysDictItemMapper, SysDi
                 .eq(SysDictItem::getStatus, Constant.N)
                 .orderByAsc(SysDictItem::getSort);
         List<SysDictItem> sysDictItems = sysDictItemMapper.selectList(wrapper);
-        redisTemplate.opsForValue().set(Constant.DICT_KEY + dictCode, JSONArray.toJSONString(sysDictItems));
+        DictUtil.addCache(dictCode,sysDictItems);
     }
 
 }

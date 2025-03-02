@@ -1,27 +1,25 @@
 package com.gltqe.wladmin.system.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
-import com.alibaba.fastjson2.JSONArray;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.gltqe.wladmin.commons.common.Constant;
 import com.gltqe.wladmin.commons.exception.WlException;
+import com.gltqe.wladmin.commons.utils.DictUtil;
+import com.gltqe.wladmin.system.entity.dto.SysDictDto;
 import com.gltqe.wladmin.system.entity.po.SysDict;
 import com.gltqe.wladmin.system.entity.po.SysDictItem;
-import com.gltqe.wladmin.system.entity.dto.SysDictDto;
 import com.gltqe.wladmin.system.mapper.SysDictItemMapper;
 import com.gltqe.wladmin.system.mapper.SysDictMapper;
 import com.gltqe.wladmin.system.service.SysDictService;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Set;
 
 @Slf4j
 @Service
@@ -31,9 +29,6 @@ public class SysDictServiceImpl extends ServiceImpl<SysDictMapper, SysDict> impl
     @Resource
     private SysDictItemMapper sysDictItemMapper;
 
-    @Resource
-    private RedisTemplate<String, Object> redisTemplate;
-
     /**
      * 加载字典到redis
      *
@@ -42,8 +37,7 @@ public class SysDictServiceImpl extends ServiceImpl<SysDictMapper, SysDict> impl
      **/
     @Override
     public void loadDict() {
-        Set keys = redisTemplate.keys(Constant.DICT_KEY + "*");
-        redisTemplate.delete(keys);
+        DictUtil.removeAllCache();
         LambdaQueryWrapper<SysDict> wrapper = new LambdaQueryWrapper<>();
         wrapper.select(SysDict::getCode).eq(SysDict::getStatus, Constant.N);
         List<SysDict> sysDictList = sysDictMapper.selectList(wrapper);
@@ -74,7 +68,7 @@ public class SysDictServiceImpl extends ServiceImpl<SysDictMapper, SysDict> impl
         if (Constant.N.equals(status)) {
             initDict(sysDict);
         } else {
-            cleanDict(sysDict);
+            DictUtil.removeCache(sysDict.getCode());
         }
     }
 
@@ -121,7 +115,7 @@ public class SysDictServiceImpl extends ServiceImpl<SysDictMapper, SysDict> impl
             initDict(sysDict);
         } else {
             // 清理之前的code
-            cleanDict(dict);
+            DictUtil.removeCache(sysDict.getCode());
         }
     }
 
@@ -142,7 +136,7 @@ public class SysDictServiceImpl extends ServiceImpl<SysDictMapper, SysDict> impl
         queryWrapper.in(SysDictItem::getDictCode, keys);
         sysDictItemMapper.delete(queryWrapper);
         for (String key : keys) {
-            redisTemplate.delete(getRedisKey(key));
+            DictUtil.removeCache(key);
         }
     }
 
@@ -165,15 +159,7 @@ public class SysDictServiceImpl extends ServiceImpl<SysDictMapper, SysDict> impl
                 .eq(SysDictItem::getStatus, Constant.N)
                 .orderByAsc(SysDictItem::getSort);
         List<SysDictItem> sysDictItems = sysDictItemMapper.selectList(wrapper);
-        redisTemplate.opsForValue().set(getRedisKey(sysDict.getCode()), JSONArray.toJSONString(sysDictItems));
-    }
-
-    public void cleanDict(SysDict sysDict) {
-        redisTemplate.delete(getRedisKey(sysDict.getCode()));
-    }
-
-    public String getRedisKey(String key) {
-        return Constant.DICT_KEY + key;
+        DictUtil.addCache(sysDict.getCode(),sysDictItems);
     }
 
     public void checkDictKey(SysDictDto sysDict) {

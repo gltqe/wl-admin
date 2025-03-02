@@ -1,17 +1,16 @@
 package com.gltqe.wladmin.system.controller;
 
-import com.alibaba.fastjson2.JSONArray;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.gltqe.wladmin.commons.common.Constant;
+import com.gltqe.wladmin.commons.common.DictConstant;
 import com.gltqe.wladmin.commons.common.Result;
+import com.gltqe.wladmin.commons.utils.DictUtil;
+import com.gltqe.wladmin.system.entity.dto.SysDictDto;
 import com.gltqe.wladmin.system.entity.po.SysDict;
 import com.gltqe.wladmin.system.entity.po.SysDictItem;
-import com.gltqe.wladmin.system.entity.dto.SysDictDto;
 import com.gltqe.wladmin.system.service.SysDictService;
 import jakarta.annotation.Resource;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -35,9 +34,6 @@ public class SysDictController {
     @Resource
     private SysDictService sysDictService;
 
-    @Resource
-    private RedisTemplate<String,String> redisTemplate;
-
     /**
      * 获取字典项
      *
@@ -48,23 +44,21 @@ public class SysDictController {
      **/
     @RequestMapping("/getDict")
     public Result getDict(@RequestBody SysDictDto sysDictDto) {
-        Map<String,Object> result = new HashMap<>();
+        Map<String, Object> result = new HashMap<>();
         String code = sysDictDto.getCode();
         if (StringUtils.isBlank(code)) {
             return Result.error("缺少参数");
         }
-        String o = redisTemplate.opsForValue().get(Constant.DICT_KEY + code);
+        List<SysDictItem> list = DictUtil.getCache(code);
         Integer type = sysDictDto.getType();
 
-        if (Constant.DICT_LIST.equals(type) || Constant.DICT_LIST_MAP.equals(type) || type==null){
-            result.put("list",JSONArray.parseArray(o,SysDictItem.class));
+        if (DictConstant.DICT_LIST.equals(type) || DictConstant.DICT_LIST_MAP.equals(type) || type == null) {
+            result.put("list", list);
         }
-        if (Constant.DICT_MAP.equals(type) ||  Constant.DICT_LIST_MAP.equals(type) || type==null){
-            if (o!=null){
-                List<SysDictItem> sysDictItems = JSONArray.parseArray(o, SysDictItem.class);
-                Map<Object, Object> map = sysDictItems.stream().collect(Collectors.toMap(SysDictItem::getValue, Function.identity() , (v1, v2) -> v1));
-                result.put("map",map);
-            }
+        if (DictConstant.DICT_MAP.equals(type) || DictConstant.DICT_LIST_MAP.equals(type) || type == null) {
+            Map<Object, Object> map = list.stream().collect(Collectors.toMap(SysDictItem::getValue, Function.identity(), (v1, v2) -> v1));
+            result.put("map", map);
+
         }
         return Result.ok(result);
     }

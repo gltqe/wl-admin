@@ -38,24 +38,6 @@ public class Constant {
     public static final Integer TOKEN_TYPE_REFRESH = 1;
     /**********************    token类型      ****************************/
 
-
-    /**********************    前端获取字典类型      ****************************/
-    /**
-     * list
-     */
-    public static final Integer DICT_LIST = 0;
-    /**
-     * map
-     */
-    public static final Integer DICT_MAP = 1;
-
-    /**
-     * list map
-     */
-    public static final Integer DICT_LIST_MAP = 2;
-    /**********************    token类型      ****************************/
-
-
     /**********************    响应码      ****************************/
     /**
      * 正常响应
@@ -126,10 +108,7 @@ public class Constant {
      */
     public static final String LOGIN_USER_KEY = "loginUser:";
 
-    /**
-     * Dict key  字典key
-     */
-    public static final String DICT_KEY = "sysDict:";
+
     /********************接口配置**********************/
     /**
      * Interface url 集合key
