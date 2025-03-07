@@ -1,6 +1,5 @@
 package com.gltqe.wladmin.commons.utils;
 
-import com.alibaba.fastjson2.JSONArray;
 import com.alibaba.fastjson2.JSONObject;
 import com.gltqe.wladmin.commons.common.DictConstant;
 import com.gltqe.wladmin.framework.excel.Dict;
@@ -15,9 +14,11 @@ import java.util.concurrent.TimeUnit;
  * @author gltqe
  * @date 2025/2/20 8:54
  */
+@SuppressWarnings("unchecked")
 public class DictUtil {
 
-    private static final RedisTemplate<String, String> redisTemplate = SpringContextUtil.getBean(RedisTemplate.class);
+
+    private static final RedisTemplate<String, Object> REDIS = SpringContextUtil.getBean("redisTemplate",RedisTemplate.class);
 
     /**
      * 默认map是否缓存
@@ -78,8 +79,7 @@ public class DictUtil {
             return null;
         }
         Map<String, String> objectMap = getCacheDictMap(dictCode, cache, timeout, false);
-        SysDictItem sysDictItem = JSONObject.parseObject(objectMap.get(String.valueOf(value)), SysDictItem.class);
-        return sysDictItem;
+        return JSONObject.parseObject(objectMap.get(String.valueOf(value)), SysDictItem.class);
     }
 
     private static Map<String, String> getCacheDictMap(String dictCode, boolean cache, int timeout, boolean reverse) {
@@ -89,9 +89,9 @@ public class DictUtil {
         } else {
             mapKey = DictConstant.DICT_MAP_KEY + dictCode;
         }
-        String s = redisTemplate.opsForValue().get(mapKey);
-        if (StringUtils.isNotBlank(s)) {
-            return JSONObject.parseObject(s, Map.class);
+        Object o = REDIS.opsForValue().get(mapKey);
+        if (o instanceof Map) {
+            return (Map<String,String> )o;
         }
 
         Map<String, String> entries = new HashMap<>();
@@ -106,7 +106,7 @@ public class DictUtil {
         }
 
         if (cache && timeout > 0) {
-            redisTemplate.opsForValue().set(mapKey, JSONObject.toJSONString(entries), timeout, TimeUnit.SECONDS);
+            REDIS.opsForValue().set(mapKey, entries, timeout, TimeUnit.SECONDS);
         }
         return entries;
     }
@@ -121,9 +121,9 @@ public class DictUtil {
             } else {
                 expKey = DictConstant.DICT_EXP_KEY + dictExp.hashCode();
             }
-            String s = redisTemplate.opsForValue().get(expKey);
-            if (StringUtils.isNotBlank(s)) {
-                return JSONObject.parseObject(s, Map.class);
+            Object o = REDIS.opsForValue().get(expKey);
+            if (o instanceof Map) {
+                map = (Map<String,String> )o;
             }
 
             String[] split = dictExp.split(dict.sepDict());
@@ -138,33 +138,34 @@ public class DictUtil {
                 }
             }
             if (!map.isEmpty() && cache && timeout > 0) {
-                redisTemplate.opsForValue().set(expKey, JSONObject.toJSONString(map), timeout, TimeUnit.SECONDS);
+                REDIS.opsForValue().set(expKey, map, timeout, TimeUnit.SECONDS);
             }
         }
         return map;
     }
 
     public static void removeAllCache() {
-        Set<String> keys = redisTemplate.keys(DictConstant.DICT_KEY + "*");
+        Set<String> keys = REDIS.keys(DictConstant.DICT_KEY + "*");
         if (keys != null && !keys.isEmpty()) {
-            redisTemplate.delete(keys);
+            REDIS.delete(keys);
         }
     }
 
     public static void addCache(String dictCode, List<SysDictItem> sysDictItemList) {
-        redisTemplate.opsForValue().set(DictConstant.DICT_KEY + dictCode, JSONArray.toJSONString(sysDictItemList));
+        REDIS.opsForValue().set(DictConstant.DICT_KEY + dictCode, sysDictItemList);
     }
 
     public static void removeCache(String dictCode) {
-        redisTemplate.delete(DictConstant.DICT_KEY + dictCode);
+        REDIS.delete(DictConstant.DICT_KEY + dictCode);
     }
 
     public static List<SysDictItem> getCache(String dictCode) {
-        String s = redisTemplate.opsForValue().get(DictConstant.DICT_KEY + dictCode);
-        if (StringUtils.isNotBlank(s)) {
-            return JSONArray.parseArray(s, SysDictItem.class);
-        } else {
-            return new ArrayList<>();
+        Object o = REDIS.opsForValue().get(DictConstant.DICT_KEY + dictCode);
+        List<SysDictItem> sysDictItemList = new ArrayList<>();
+        if (o instanceof List<?>) {
+            sysDictItemList =(List<SysDictItem>) o;
+            return sysDictItemList;
         }
+        return sysDictItemList;
     }
 }

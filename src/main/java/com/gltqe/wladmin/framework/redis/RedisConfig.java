@@ -1,11 +1,19 @@
 package com.gltqe.wladmin.framework.redis;
 
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.annotation.PropertyAccessor;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.json.JsonMapper;
+import com.fasterxml.jackson.databind.jsontype.impl.LaissezFaireSubTypeValidator;
 import jakarta.annotation.Resource;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.data.redis.listener.RedisMessageListenerContainer;
 import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
@@ -20,27 +28,53 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
 
 @Configuration
 public class RedisConfig {
+
     @Resource
     private RedisConnectionFactory redisConnectionFactory;
 
-    @Bean
+    @Bean("redisTemplate")
     @Primary
-    public RedisTemplate<Object, Object> redisTemplate() {
-        RedisTemplate<Object, Object> redisTemplate = new RedisTemplate<>();
+    public RedisTemplate<String, Object> redisTemplate() {
+        RedisTemplate<String, Object> redisTemplate = new RedisTemplate<>();
         redisTemplate.setConnectionFactory(redisConnectionFactory);
 
+
+        JsonMapper objectMapper = new JsonMapper();
+        // 指定要序列化的域，field，get和set，以及修饰符范围。ANY指包括private和public修饰符范围
+        objectMapper.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY);
+        // 忽略JSON中存在但Java类中不匹配的字段
+        objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        // 指定序列化输入类型，类的信息也将添加到json中
+        objectMapper.activateDefaultTyping(LaissezFaireSubTypeValidator.instance, ObjectMapper.DefaultTyping.NON_FINAL, JsonTypeInfo.As.WRAPPER_ARRAY);
+
         // 使用Jackson2JsonRedisSerialize 替换默认序列化
-        Jackson2JsonRedisSerializer redisSerializer = new Jackson2JsonRedisSerializer(Object.class);
+        Jackson2JsonRedisSerializer<Object> redisSerializer = new Jackson2JsonRedisSerializer<>(objectMapper,Object.class);
 //        FastJsonRedisSerializer<Object> fastJsonRedisSerializer = new FastJsonRedisSerializer<>(Object.class);
-//       FastJson2JsonRedisSerializer fastJson2JsonRedisSerializer = new FastJson2JsonRedisSerializer(Object.class);
+//       FastJson2JsonRedisSerializer<Object> redisSerializer = new FastJson2JsonRedisSerializer<>(Object.class);
+
+        StringRedisSerializer stringRedisSerializer = new StringRedisSerializer();
         // 设置value的序列化规则和 key的序列化规则
-        redisTemplate.setKeySerializer(new StringRedisSerializer());
+        redisTemplate.setKeySerializer(stringRedisSerializer);
         redisTemplate.setValueSerializer(redisSerializer);
-        redisTemplate.setHashKeySerializer(new StringRedisSerializer());
+        redisTemplate.setHashKeySerializer(stringRedisSerializer);
         redisTemplate.setHashValueSerializer(redisSerializer);
         redisTemplate.afterPropertiesSet();
 
         return redisTemplate;
+    }
+
+
+    @Bean("stringRedisTemplate")
+    public StringRedisTemplate stringRedisTemplate() {
+        StringRedisTemplate stringRedisTemplate = new StringRedisTemplate();
+        stringRedisTemplate.setConnectionFactory(redisConnectionFactory);
+        StringRedisSerializer stringRedisSerializer = new StringRedisSerializer();
+        stringRedisTemplate.setKeySerializer(stringRedisSerializer);
+        stringRedisTemplate.setValueSerializer(stringRedisSerializer);
+        stringRedisTemplate.setHashKeySerializer(stringRedisSerializer);
+        stringRedisTemplate.setHashValueSerializer(stringRedisSerializer);
+        stringRedisTemplate.afterPropertiesSet();
+        return stringRedisTemplate;
     }
 
     @Bean
@@ -53,6 +87,7 @@ public class RedisConfig {
 
     /**
      * 将lua脚本的内容加载出来放入到DefaultRedisScript
+     *
      * @return
      */
     @Bean(name = "limitScript")
@@ -67,8 +102,6 @@ public class RedisConfig {
 
     /**
      * 限流脚本
-     *
-     * @return
      */
     private String limitScriptTextZSet() {
         return "redis.replicate_commands();\n" +
@@ -118,62 +151,5 @@ public class RedisConfig {
                 "end\n" +
                 "return 0";
     }
-    /**
-     * 限流脚本
-     * 弃用
-     * @return
-     */
-    private String limitScriptText() {
-        return "redis.replicate_commands();\n" +
-                "local singleKey = KEYS[1]\n" +
-                "local singleUserKey = KEYS[2]\n" +
-                "local wholeKey = KEYS[3]\n" +
-                "local wholeLimiterKey = KEYS[4]\n" +
-                "local currentTime = redis.call('TIME')[1]\n" +
-                "if redis.call('EXISTS',singleKey)==1 then\n" +
-                "\tlocal maxSize = tonumber(redis.call('hget',singleKey,'max'))\n" +
-                "\tlocal outTime = tonumber(redis.call('hget',singleKey,'outTime'))\n" +
-                "\tif redis.call('EXISTS',singleUserKey)==1 then\n" +
-                "\t\tif redis.call('llen',singleUserKey) < maxSize then\n" +
-                "\t\t\tredis.call('rpush',singleUserKey,currentTime)\n" +
-                "\t\t\tredis.call('expire',singleUserKey,outTime)\n" +
-                "\t\telse\n" +
-                "\t\t\tlocal oldest = redis.call('lpop',singleUserKey)\n" +
-                "\t\t\tif currentTime-oldest > outTime then\n" +
-                "\t\t\t\tredis.call('rpush',singleUserKey,currentTime)\n" +
-                "\t\t\t\tredis.call('expire',singleUserKey,outTime)\n" +
-                "\t\t\telse\n" +
-                "\t\t\t\tredis.call('lpush',singleUserKey,oldest)\n" +
-                "\t\t\t\treturn -1\n" +
-                "\t\t\tend\n" +
-                "\t\tend\t\t\n" +
-                "\telse\n" +
-                "\t\tredis.call('rpush',singleUserKey,currentTime)\n" +
-                "\t\tredis.call('expire',singleUserKey,outTime)\n" +
-                "\tend\n" +
-                "end\t\n" +
-                "if redis.call('EXISTS',wholeKey)==1 then\n" +
-                "\tlocal maxSizeWhole = tonumber(redis.call('hget',wholeKey,'max'))\n" +
-                "\tlocal outTimeWhole = tonumber(redis.call('hget',wholeKey,'outTime'))\n" +
-                "\tif redis.call('EXISTS',wholeLimiterKey)==1 then\n" +
-                "\t\tif redis.call('llen',wholeLimiterKey) < maxSizeWhole then\n" +
-                "\t\t\tredis.call('rpush',wholeLimiterKey,currentTime)\n" +
-                "\t\t\tredis.call('expire',wholeLimiterKey,outTimeWhole)\n" +
-                "\t\telse\n" +
-                "\t\t\tlocal oldest = redis.call('lpop',wholeLimiterKey)\n" +
-                "\t\t\tif currentTime-oldest > outTimeWhole then\n" +
-                "\t\t\t\tredis.call('rpush',wholeLimiterKey,currentTime)\n" +
-                "\t\t\t\tredis.call('expire',wholeLimiterKey,outTimeWhole)\n" +
-                "\t\t\telse\n" +
-                "\t\t\t\tredis.call('lpush',wholeLimiterKey,oldest)\n" +
-                "\t\t\t\treturn -2\n" +
-                "\t\t\tend\n" +
-                "\t\tend\t\t\n" +
-                "\telse\n" +
-                "\t\tredis.call('rpush',wholeLimiterKey,currentTime)\n" +
-                "\t\tredis.call('expire',wholeLimiterKey,outTimeWhole)\n" +
-                "\tend\n" +
-                "end\n" +
-                "return 0";
-    }
+
 }

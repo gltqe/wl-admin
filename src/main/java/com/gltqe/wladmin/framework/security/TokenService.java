@@ -1,10 +1,9 @@
 package com.gltqe.wladmin.framework.security;
 
-import com.alibaba.fastjson2.JSONObject;
 import com.gltqe.wladmin.commons.common.Constant;
-import com.gltqe.wladmin.commons.utils.JwtUtil;
 import com.gltqe.wladmin.commons.exception.TokenErrorException;
 import com.gltqe.wladmin.commons.exception.TokenExpireException;
+import com.gltqe.wladmin.commons.utils.JwtUtil;
 import com.gltqe.wladmin.system.entity.bo.UserDetailsBo;
 import jakarta.annotation.Resource;
 import lombok.Data;
@@ -22,7 +21,7 @@ public class TokenService {
 
 
     @Resource
-    private RedisTemplate redisTemplate;
+    private RedisTemplate<String,Object> redisTemplate;
 
     public TokenUserDetails getSysUserDetails(String token){
         // 从jwt中获取username id
@@ -40,13 +39,12 @@ public class TokenService {
         }
 
         // 查询redis中是否有该用户
-        UserDetailsBo userDetails = null;
         Object o = redisTemplate.opsForValue().get(Constant.LOGIN_USER_KEY + JwtUtil.getUsernameByToken(token));
         if (Objects.isNull(o)) {
             tokenUserDetails.setRuntimeException(new TokenErrorException("已被强制退出,请重新登录"));
             return tokenUserDetails;
         } else {
-            userDetails = JSONObject.parseObject(JSONObject.toJSONString(o), UserDetailsBo.class);
+            UserDetailsBo userDetails =  (UserDetailsBo) o;
             tokenUserDetails.setFlag(true);
             tokenUserDetails.setSysUserDetails(userDetails);
         }

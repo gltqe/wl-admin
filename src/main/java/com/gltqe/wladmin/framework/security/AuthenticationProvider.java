@@ -5,12 +5,11 @@ import com.gltqe.wladmin.commons.common.Constant;
 import com.gltqe.wladmin.commons.enums.UserStatusEnum;
 import com.gltqe.wladmin.commons.exception.LoginException;
 import com.gltqe.wladmin.system.entity.bo.UserDetailsBo;
-import com.gltqe.wladmin.system.mapper.SysUserMapper;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
@@ -38,10 +37,8 @@ public class AuthenticationProvider implements org.springframework.security.auth
     private PasswordEncoder passwordEncoder;
 
     @Resource
-    private RedisTemplate<String, String> redisTemplate;
+    private StringRedisTemplate stringRedisTemplate;
 
-    @Resource
-    private SysUserMapper sysUserMapper;
 
     @Override
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
@@ -87,33 +84,33 @@ public class AuthenticationProvider implements org.springframework.security.auth
             lockUser(username);
             throw new LoginException("用户名或密码错误!");
         } else {
-            redisTemplate.delete(Constant.ERROR_TIMES + username);
+            stringRedisTemplate.delete(Constant.ERROR_TIMES + username);
         }
     }
 
     private void checkLock(UserDetailsBo userDetail, String usernameForm) {
         String username = userDetail.getUsername();
-        String cacheLock = redisTemplate.opsForValue().get(Constant.LOGIN_LOCK + username);
+        String cacheLock = stringRedisTemplate.opsForValue().get(Constant.LOGIN_LOCK + username);
         if (usernameForm.equals(cacheLock)) {
             throw new LoginException("当前用户[" + usernameForm + "]已被锁定,请稍后再试");
         }
     }
 
     private void lockUser(String username) {
-        String errorTimesLimit = redisTemplate.opsForValue().get(ConfigConstant.ERROR_TIMES_LIMIT);
+        String errorTimesLimit = stringRedisTemplate.opsForValue().get(ConfigConstant.ERROR_TIMES_LIMIT);
         if (StringUtils.isNotBlank(errorTimesLimit) && Long.parseLong(errorTimesLimit) > 0) {
             // 增加错误次数
-            Long increment = redisTemplate.opsForValue().increment(Constant.ERROR_TIMES + username);
+            Long increment = stringRedisTemplate.opsForValue().increment(Constant.ERROR_TIMES + username);
             long num = Long.parseLong(errorTimesLimit);
             if (num > 0 && increment >= num) {
                 // 锁定用户时间
-                String time = redisTemplate.opsForValue().get(ConfigConstant.LOGIN_LOCK_TIME);
+                String time = stringRedisTemplate.opsForValue().get(ConfigConstant.LOGIN_LOCK_TIME);
                 if (StringUtils.isNotBlank(time)) {
                     long timeLong = Long.parseLong(time);
                     if (timeLong != 0) {
                         // 锁定用户
-                        redisTemplate.opsForValue().set(Constant.LOGIN_LOCK + username, username, timeLong, TimeUnit.MINUTES);
-                        redisTemplate.delete(Constant.ERROR_TIMES + username);
+                        stringRedisTemplate.opsForValue().set(Constant.LOGIN_LOCK + username, username, timeLong, TimeUnit.MINUTES);
+                        stringRedisTemplate.delete(Constant.ERROR_TIMES + username);
                     }
                 }
             }

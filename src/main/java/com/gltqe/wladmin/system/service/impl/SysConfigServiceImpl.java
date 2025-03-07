@@ -4,22 +4,20 @@ import cn.hutool.core.bean.BeanUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.gltqe.wladmin.commons.common.ConfigConstant;
 import com.gltqe.wladmin.commons.common.Constant;
 import com.gltqe.wladmin.commons.exception.WlException;
-import com.gltqe.wladmin.system.entity.po.SysConfig;
+import com.gltqe.wladmin.commons.utils.ConfigUtil;
 import com.gltqe.wladmin.system.entity.dto.SysConfigDto;
+import com.gltqe.wladmin.system.entity.po.SysConfig;
 import com.gltqe.wladmin.system.mapper.SysConfigMapper;
 import com.gltqe.wladmin.system.service.SysConfigService;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Set;
 
 /**
  * 系统配置
@@ -33,9 +31,6 @@ public class SysConfigServiceImpl extends ServiceImpl<SysConfigMapper, SysConfig
     @Resource
     private SysConfigMapper sysConfigMapper;
 
-    @Resource
-    private RedisTemplate redisTemplate;
-
     /**
      * 加载核心配置到redis
      *
@@ -44,20 +39,19 @@ public class SysConfigServiceImpl extends ServiceImpl<SysConfigMapper, SysConfig
      **/
     @Override
     public void loadConfig() {
-        Set keys = redisTemplate.keys(ConfigConstant.CONFIG_KEY + "*");
-        redisTemplate.delete(keys);
+        ConfigUtil.removeAllCache();
         LambdaQueryWrapper<SysConfig> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(SysConfig::getStatus, Constant.N);
         List<SysConfig> sysConfigs = sysConfigMapper.selectList(wrapper);
         for (SysConfig sysConfig : sysConfigs) {
-            initConfig(sysConfig);
+            ConfigUtil.addCache(sysConfig);
         }
     }
 
     /**
      * 修改状态
      *
-     * @param sysConfigVo
+     * @param sysConfigDto
      * @author gltqe
      * @date 2022/7/3 1:25
      **/
@@ -75,9 +69,9 @@ public class SysConfigServiceImpl extends ServiceImpl<SysConfigMapper, SysConfig
         sysConfigMapper.update(null, wrapper);
         SysConfig sysConfig = sysConfigMapper.selectById(id);
         if (Constant.N.equals(status)) {
-            initConfig(sysConfig);
+            ConfigUtil.addCache(sysConfig);
         } else {
-            cleanConfig(sysConfig);
+            ConfigUtil.removeCache(sysConfig.getCode());
         }
     }
 
@@ -101,7 +95,7 @@ public class SysConfigServiceImpl extends ServiceImpl<SysConfigMapper, SysConfig
         }
         sysConfigMapper.insert(sysConfig);
         if (Constant.N.equals(sysConfig.getStatus())) {
-            initConfig(sysConfig);
+            ConfigUtil.addCache(sysConfig);
         }
     }
 
@@ -126,9 +120,9 @@ public class SysConfigServiceImpl extends ServiceImpl<SysConfigMapper, SysConfig
         }
         sysConfigMapper.updateById(sysConfig);
         if (Constant.N.equals(status)) {
-            initConfig(sysConfig);
+            ConfigUtil.addCache(sysConfig);
         } else {
-            cleanConfig(sysConfig);
+            ConfigUtil.removeCache(sysConfig.getCode());
         }
     }
 
@@ -146,7 +140,7 @@ public class SysConfigServiceImpl extends ServiceImpl<SysConfigMapper, SysConfig
         wrapper.in(SysConfig::getCode, keys);
         sysConfigMapper.delete(wrapper);
         for (String key : keys) {
-            redisTemplate.delete(getRedisKey(key));
+           ConfigUtil.removeCache(key);
         }
     }
 
@@ -160,18 +154,6 @@ public class SysConfigServiceImpl extends ServiceImpl<SysConfigMapper, SysConfig
     @Transactional(rollbackFor = Exception.class)
     public void refreshConfig() {
         loadConfig();
-    }
-
-    public void initConfig(SysConfig sysConfig) {
-        redisTemplate.opsForValue().set(getRedisKey(sysConfig.getCode()), sysConfig.getValue());
-    }
-
-    public void cleanConfig(SysConfig sysConfig) {
-        redisTemplate.delete(getRedisKey(sysConfig.getCode()));
-    }
-
-    public String getRedisKey(String key) {
-        return ConfigConstant.CONFIG_KEY + key;
     }
 
     public void checkConfigKey(SysConfigDto sysConfigVo) {

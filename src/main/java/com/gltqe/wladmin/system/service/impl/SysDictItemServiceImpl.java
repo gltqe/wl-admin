@@ -121,7 +121,10 @@ public class SysDictItemServiceImpl extends ServiceImpl<SysDictItemMapper, SysDi
 
     public void refreshDict(String dictCode) {
         LambdaQueryWrapper<SysDictItem> wrapper = new LambdaQueryWrapper<>();
-        wrapper.select(SysDictItem::getText, SysDictItem::getValue, SysDictItem::getDictCode,SysDictItem::getTagType,SysDictItem::getTagEffect)
+        wrapper.select(SysDictItem::getText, SysDictItem::getValue,
+                        SysDictItem::getDictCode,
+                        SysDictItem::getTagType,
+                        SysDictItem::getTagEffect)
                 .eq(SysDictItem::getDictCode, dictCode)
                 .eq(SysDictItem::getStatus, Constant.N)
                 .orderByAsc(SysDictItem::getSort);

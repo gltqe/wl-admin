@@ -16,6 +16,7 @@ spring:
     date-format: yyyy-MM-dd HH:mm:ss
     # 配置 Date 类的时区
     time-zone: GMT+8
-
-
-
+  servlet:
+    multipart:
+      max-file-size: 100MB
+      max-request-size: 200MB

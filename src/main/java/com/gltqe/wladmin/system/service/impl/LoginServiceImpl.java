@@ -51,7 +51,7 @@ public class LoginServiceImpl implements LoginService {
     private LoginLogMapper loginLogMapper;
 
     @Resource
-    private RedisTemplate redisTemplate;
+    private RedisTemplate<String,Object> redisTemplate;
 
     @Resource
     private SysRoleMapper sysRoleMapper;
