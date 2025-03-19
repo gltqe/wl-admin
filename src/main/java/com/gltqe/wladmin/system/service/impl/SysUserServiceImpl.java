@@ -1,7 +1,6 @@
 package com.gltqe.wladmin.system.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
-import cn.hutool.core.collection.IterUtil;
 import cn.hutool.core.util.HexUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
@@ -19,16 +18,15 @@ import com.gltqe.wladmin.commons.utils.JwtUtil;
 import com.gltqe.wladmin.system.entity.bo.UserDetailsBo;
 import com.gltqe.wladmin.system.entity.dto.PasswordDto;
 import com.gltqe.wladmin.system.entity.dto.SysUserDto;
-import com.gltqe.wladmin.system.entity.po.*;
+import com.gltqe.wladmin.system.entity.po.FileInfo;
+import com.gltqe.wladmin.system.entity.po.SysRoleUser;
+import com.gltqe.wladmin.system.entity.po.SysUser;
+import com.gltqe.wladmin.system.entity.po.SysUserPosition;
 import com.gltqe.wladmin.system.entity.vo.SysUserVo;
-import com.gltqe.wladmin.system.mapper.SysRoleMapper;
 import com.gltqe.wladmin.system.mapper.SysRoleUserMapper;
 import com.gltqe.wladmin.system.mapper.SysUserMapper;
 import com.gltqe.wladmin.system.mapper.SysUserPositionMapper;
-import com.gltqe.wladmin.system.service.FileInfoService;
-import com.gltqe.wladmin.system.service.SysRoleUserService;
-import com.gltqe.wladmin.system.service.SysUserPositionService;
-import com.gltqe.wladmin.system.service.SysUserService;
+import com.gltqe.wladmin.system.service.*;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
@@ -63,8 +61,6 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
     @Resource
     private BCryptPasswordEncoder passwordEncoder;
     @Resource
-    private SysRoleMapper sysRoleMapper;
-    @Resource
     private SysRoleUserMapper sysRoleUserMapper;
     @Resource
     private SysRoleUserService sysRoleUserService;
@@ -74,6 +70,9 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
     private SysUserPositionService sysUserPositionService;
     @Resource
     private SysUserPositionMapper sysUserPositionMapper;
+
+    @Resource
+    private AuthorityService authorityService;
 
     @Value("${upload.path.avatar}")
     private String avatarPath;
@@ -112,22 +111,7 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
         // 刷新部门id 用户状态
         userDetail.setDeptId(sysUser.getDeptId());
         userDetail.setStatus(sysUser.getStatus());
-        // 查询当前用户已分配角色
-        String uid = sysUser.getId();
-        List<SysRole> roleList = sysRoleMapper.getUserRoleByUserId(uid);
-        userDetail.setRoleList(roleList);
-        // 查询权限
-        List<String> permissionList = new ArrayList<>();
-        if (JwtUtil.isAdmin(username)) {
-            permissionList.add(Constant.ADMIN_PERMISSION);
-        } else {
-            if (roleList.isEmpty()) {
-                throw new LoginException("用户状态异常,未分配任何角色,请联系管理员");
-            }
-            permissionList = sysUserMapper.getPermissionByUser(uid);
-        }
-        userDetail.setPermissionList(permissionList);
-//        userDetail.setIsLogin(false);
+        authorityService.setRolePermission(userDetail);
         redisTemplate.opsForValue().set(Constant.LOGIN_USER_KEY + username, userDetail, Long.valueOf(expire), TimeUnit.SECONDS);
     }
 
@@ -198,29 +182,11 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
         String uid = sysUser.getId();
         // 添加岗位关联关系
         List<String> positionIds = sysUserDto.getPositionIds();
-        if (IterUtil.isNotEmpty(positionIds)) {
-            List<SysUserPosition> sysUserPositionList = new ArrayList<>();
-            for (String positionId : positionIds) {
-                SysUserPosition sysUserPosition = new SysUserPosition();
-                sysUserPosition.setUid(uid);
-                sysUserPosition.setPid(positionId);
-                sysUserPositionList.add(sysUserPosition);
-            }
-            sysUserPositionService.saveBatch(sysUserPositionList);
-        }
+        saveUserPosition(positionIds, uid);
 
         // 添加用户角色关联关系
         List<String> roleIds = sysUserDto.getRoleIds();
-        if (IterUtil.isNotEmpty(roleIds)) {
-            List<SysRoleUser> sysRoleUserList = new ArrayList<>();
-            for (String roleId : roleIds) {
-                SysRoleUser sysRoleUser = new SysRoleUser();
-                sysRoleUser.setUid(uid);
-                sysRoleUser.setRid(roleId);
-                sysRoleUserList.add(sysRoleUser);
-            }
-            sysRoleUserService.saveBatch(sysRoleUserList);
-        }
+        saveUserRole(roleIds,uid);
 
     }
 
@@ -256,16 +222,7 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
             upWrapper.eq(SysUserPosition::getUid, uid);
             sysUserPositionMapper.delete(upWrapper);
             // 添加用户岗位关联关系
-            if (!positionIds.isEmpty()) {
-                List<SysUserPosition> sysUserPositionList = new ArrayList<>();
-                for (String positionId : positionIds) {
-                    SysUserPosition sysUserPosition = new SysUserPosition();
-                    sysUserPosition.setUid(uid);
-                    sysUserPosition.setPid(positionId);
-                    sysUserPositionList.add(sysUserPosition);
-                }
-                sysUserPositionService.saveBatch(sysUserPositionList);
-            }
+            saveUserPosition(positionIds, uid);
         }
         // 角色
         List<String> roleIds = sysUserDto.getRoleIds();
@@ -275,16 +232,7 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
             wrapper.eq(SysRoleUser::getUid, uid);
             sysRoleUserService.remove(wrapper);
             // 添加用户角色关联关系
-            if (!roleIds.isEmpty()) {
-                List<SysRoleUser> sysRoleUserList = new ArrayList<>();
-                for (String roleId : roleIds) {
-                    SysRoleUser sysRoleUser = new SysRoleUser();
-                    sysRoleUser.setUid(uid);
-                    sysRoleUser.setRid(roleId);
-                    sysRoleUserList.add(sysRoleUser);
-                }
-                sysRoleUserService.saveBatch(sysRoleUserList);
-            }
+            saveUserRole(roleIds,uid);
         }
     }
 
@@ -475,6 +423,32 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
             if (Objects.nonNull(o)) {
                 record.setStatus(UserStatusEnum.LOCK.getCode());
             }
+        }
+    }
+
+    private void saveUserPosition(List<String> positionIds, String userId) {
+        if (positionIds != null && !positionIds.isEmpty()) {
+            List<SysUserPosition> sysUserPositionList = new ArrayList<>();
+            for (String positionId : positionIds) {
+                SysUserPosition sysUserPosition = new SysUserPosition();
+                sysUserPosition.setUid(userId);
+                sysUserPosition.setPid(positionId);
+                sysUserPositionList.add(sysUserPosition);
+            }
+            sysUserPositionService.saveBatch(sysUserPositionList);
+        }
+    }
+
+    private void saveUserRole(List<String> roleIds, String userId) {
+        if (roleIds != null && !roleIds.isEmpty()) {
+            List<SysRoleUser> sysRoleUserList = new ArrayList<>();
+            for (String roleId : roleIds) {
+                SysRoleUser sysRoleUser = new SysRoleUser();
+                sysRoleUser.setUid(userId);
+                sysRoleUser.setRid(roleId);
+                sysRoleUserList.add(sysRoleUser);
+            }
+            sysRoleUserService.saveBatch(sysRoleUserList);
         }
     }
 

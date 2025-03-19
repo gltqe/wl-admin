@@ -6,7 +6,6 @@ import cn.hutool.core.util.IdUtil;
 import cn.hutool.core.util.ObjectUtil;
 import com.gltqe.wladmin.commons.common.ConfigConstant;
 import com.gltqe.wladmin.commons.common.Constant;
-import com.gltqe.wladmin.commons.exception.LoginException;
 import com.gltqe.wladmin.commons.exception.TokenErrorException;
 import com.gltqe.wladmin.commons.exception.WlException;
 import com.gltqe.wladmin.commons.utils.IpUtil;
@@ -17,11 +16,9 @@ import com.gltqe.wladmin.system.entity.bo.UserDetailsBo;
 import com.gltqe.wladmin.system.entity.dto.LoginDetailDto;
 import com.gltqe.wladmin.system.entity.dto.LoginDto;
 import com.gltqe.wladmin.system.entity.dto.RefreshTokenDto;
-import com.gltqe.wladmin.system.entity.po.SysRole;
 import com.gltqe.wladmin.system.entity.vo.CaptchaVo;
 import com.gltqe.wladmin.system.entity.vo.LoginVo;
-import com.gltqe.wladmin.system.mapper.SysRoleMapper;
-import com.gltqe.wladmin.system.mapper.SysUserMapper;
+import com.gltqe.wladmin.system.service.AuthorityService;
 import com.gltqe.wladmin.system.service.LoginService;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
@@ -34,7 +31,10 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Service;
 
-import java.util.*;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
@@ -51,19 +51,19 @@ public class LoginServiceImpl implements LoginService {
     private LoginLogMapper loginLogMapper;
 
     @Resource
-    private RedisTemplate<String,Object> redisTemplate;
+    private RedisTemplate<String, Object> redisTemplate;
 
     @Resource
-    private SysRoleMapper sysRoleMapper;
-
-    @Resource
-    private SysUserMapper sysUserMapper;
+    private AuthorityService authorityService;
 
     @Value("${token.access-ttl:3600}")
     private Long accessTtl;
 
     @Value("${token.refresh-ttl:360000}")
     private Long refreshTtl;
+
+    @Value("${token.refresh-space:1800}")
+    private Long refreshSpace;
 
     @Override
     public CaptchaVo getCaptcha() {
@@ -193,33 +193,23 @@ public class LoginServiceImpl implements LoginService {
                 Integer tokenType = JwtUtil.getTokenType(refreshToken);
                 if (Constant.TOKEN_TYPE_REFRESH.equals(tokenType)) {
                     String username = JwtUtil.getUsernameByToken(refreshToken);
-                    UserDetailsBo userDetail = (UserDetailsBo) userDetailsService.loadUserByUsername(username);
-                    // 查询角色
-                    String uid = userDetail.getUserId();
-                    List<SysRole> roleList = sysRoleMapper.getUserRoleByUserId(uid);
-                    userDetail.setRoleList(roleList);
-                    // 查询权限
-                    List<String> permissionList = new ArrayList<>();
-                    if (JwtUtil.isAdmin(username)) {
-                        permissionList.add(Constant.ADMIN_PERMISSION);
+                    Boolean refresh = redisTemplate.opsForValue().setIfAbsent(Constant.TOKEN_REFRESH_SPACE_KEY + username, 1, refreshSpace, TimeUnit.SECONDS);
+                    if (Boolean.TRUE.equals(refresh)) {
+                        UserDetailsBo userDetail = (UserDetailsBo) userDetailsService.loadUserByUsername(username);
+                        authorityService.setRolePermission(userDetail);
+                        //创建token
+                        Map<String, Object> map = new HashMap<>(2);
+                        map.put("username", username);
+                        map.put("tokenId", IdUtil.fastSimpleUUID());
+                        map.put(Constant.TOKEN_TYPE_KEY, Constant.TOKEN_TYPE_ACCESS);
+                        String accessToken = JwtUtil.createToken(map, accessTtl);
+                        //存入redis
+                        setLoginInfo(userDetail, request);
+                        redisTemplate.opsForValue().set(Constant.LOGIN_USER_KEY + username, userDetail, accessTtl, TimeUnit.SECONDS);
+                        return accessToken;
                     } else {
-                        if (roleList.isEmpty()) {
-                            throw new LoginException("用户状态异常,未分配任何角色,请联系管理员");
-                        }
-                        permissionList = sysUserMapper.getPermissionByUser(uid);
+                        throw new TokenErrorException("刷新频率过高,请重新登录");
                     }
-                    userDetail.setPermissionList(permissionList);
-
-                    //创建token
-                    Map<String, Object> map = new HashMap<>(2);
-                    map.put("username", username);
-                    map.put("tokenId", IdUtil.fastSimpleUUID());
-                    map.put(Constant.TOKEN_TYPE_KEY, Constant.TOKEN_TYPE_ACCESS);
-                    String accessToken = JwtUtil.createToken(map, accessTtl);
-                    //存入redis
-                    setLoginInfo(userDetail, request);
-                    redisTemplate.opsForValue().set(Constant.LOGIN_USER_KEY + username, userDetail, accessTtl, TimeUnit.SECONDS);
-                    return accessToken;
                 } else {
                     throw new TokenErrorException("token错误,请重新登录");
                 }

@@ -58,6 +58,8 @@ token:
   access-ttl: 7200
   # refreshToken过期时间 30天
   refresh-ttl: 2592000
+  # 刷新token间隔时间 半小时
+  refresh-space: 1800
   # 对称秘钥
   secret: MTIzNDU2
 

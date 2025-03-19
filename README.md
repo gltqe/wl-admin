@@ -12,11 +12,7 @@
 
 ## 项目介绍
 
-源于同事的一句：“你做了这么久JavaWeb，有没有自己写的一套管理后台？”，`wl-admin`被创建了。
-
-如你所见，`wl-admin`是基于`JDK21`、`Springboot3`、`Vue3`开发的，技术栈采用的都是相对较新的稳定版本，未来也会持续更新相关依赖。
-
-`wl-admin`的目标是成为代码简约、功能完善，能适用于大多数场景的管理后台。
+`wl-admin`是基于`JDK21`、`Springboot3`、`Vue3`开发的轻量后台管理系统，代码简洁易于维护，适用于大多数场景‌。
 
 * 前端代码：[Gitee](https://gitee.com/gltqe/wl-admin-ui) | [Github](https://github.com/gltqe/wl-admin-ui)
 * 管理员：admin/123

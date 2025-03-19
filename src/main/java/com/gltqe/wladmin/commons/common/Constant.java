@@ -22,11 +22,13 @@ public class Constant {
      */
     public static final String EXPIRE_TIME_KEY = "expire_time";
 
-    /**********************    token类型      ****************************/
+    /**********************    token     ****************************/
+
     /**
      * token类型key
      */
     public static final String TOKEN_TYPE_KEY = "token_type";
+
     /**
      * 访问令牌
      */
@@ -36,7 +38,13 @@ public class Constant {
      * 刷新令牌
      */
     public static final Integer TOKEN_TYPE_REFRESH = 1;
-    /**********************    token类型      ****************************/
+
+    /**
+     * 刷新token间隔 redis key
+     */
+    public static final String TOKEN_REFRESH_SPACE_KEY = "token_refresh_space_key:";
+
+    /**********************    token类     ****************************/
 
     /**********************    响应码      ****************************/
     /**
