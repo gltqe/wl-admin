@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gltqe.wladmin.project.test.mapper.TestInfoMapper">
+    <select id="pageCustom" resultType="com.gltqe.wladmin.project.test.entity.po.TestInfo">
+        select ti.*
+        from test_info ti
+--         left join sys_user su on ti.create_id = su.id
+--         left join sys_dept sd on su.dept_id = sd.id
+        <where>
+            <if test="testInfoVo.content !=null and testInfoVo.content!=''">
+                ti.content like concat('%',#{testInfoVo.content},'%')
+            </if>
+            <if test="testInfoVo.createName !=null and testInfoVo.createName!=''">
+                ti.createName like concat('%',#{testInfoVo.createName},'%')
+            </if>
+            <if test="testInfoVo.createDept !=null and testInfoVo.createDept!=''">
+                ti.createDept like concat('%',#{testInfoVo.createDept},'%')
+            </if>
+<!--            <if test="testInfoVo.createName !=null and testInfoVo.createName!=''">-->
+<!--                su.cnName like concat('%',#{testInfoVo.createName},'%')-->
+<!--            </if>-->
+<!--            <if test="testInfoVo.createDept !=null and testInfoVo.createDept!=''">-->
+<!--                sd.name like concat('%',#{testInfoVo.createDept},'%')-->
+<!--            </if>-->
+        </where>
+    </select>
+
+</mapper>

@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gltqe.wladmin.system.mapper.SysUserMapper">
+    <select id="getPermissionByUser" resultType="java.lang.String">
+        select m.permission
+        from sys_menu m
+                 join sys_role_menu rm on m.id = rm.mid
+                 join sys_role r on rm.rid = r.id
+            and r.status = '0'
+            and r.is_delete = '0'
+                 join sys_role_user ru on r.id = ru.rid
+                 join sys_user u on ru.uid = u.id
+        where u.id = #{userId}
+          and m.status = '0'
+          and m.is_delete = '0'
+          and m.type !='0'
+          and m.permission is not null
+    </select>
+
+    <select id="getSelfInfo" resultType="com.gltqe.wladmin.system.entity.vo.SysUserVo">
+        select
+               u.id,
+               u.cn_name,
+               u.username,
+               u.phone,
+               u.email,
+               u.age,
+               u.sex,
+               u.status,
+               u.profile,
+               u.remarks,
+               u.avatar,
+               u.create_time,
+               d.name as deptName,
+               pos.positionName
+        from sys_user u
+                 left join sys_dept d on u.dept_id = d.id
+                 left join (select GROUP_CONCAT(sp.name order by sp.sort  separator '、') as positionName, sup.uid
+                            FROM sys_position sp
+                                     left join sys_user_position sup on sup.pid = sp.id
+                            where sup.uid = #{userId}) pos on u.id = pos.uid
+        where u.id = #{userId}
+          and u.is_delete = '0'
+    </select>
+
+    <sql id="userListSelect">
+        select
+        u.id,
+        u.cn_name,
+        u.username,
+        u.phone,
+        u.email,
+        u.age,
+        u.sex,
+        u.status,
+        u.profile,
+        u.remarks,
+        u.avatar,
+        d.name as dept_name,
+        pos.name as position_name
+        from sys_user u
+        left join sys_dept d on u.dept_id=d.id
+        left join (
+        select GROUP_CONCAT(sp.name order by sp.sort separator '、') as name, sup.uid uid
+        FROM sys_position sp
+        left join sys_user_position sup on sup.pid = sp.id group by uid
+        ) pos on pos.uid = u.id
+    </sql>
+
+    <sql id="userListWhere">
+        <where>
+            u.is_delete = 0
+            <if test="params.id != null">
+                and u.id != #{params.id}
+            </if>
+            <if test="params.cnName!=null and params.cnName!=''">
+                and u.cn_name like CONCAT('%',#{params.cnName} ,'%')
+            </if>
+            <if test="params.username!=null and params.username!=''">
+                and u.username like CONCAT('%',#{params.username} ,'%')
+            </if>
+            <if test="params.phone!=null and params.phone!=''">
+                and u.phone like CONCAT('%',#{params.phone} ,'%')
+            </if>
+            <if test="params.deptId!=null and params.deptId!=''">
+                and u.dept_id like CONCAT('%',#{params.deptId} ,'%')
+            </if>
+            <if test="params.status!=null and params.status!=''">
+                and u.status = #{params.status}
+            </if>
+        </where>
+    </sql>
+
+    <select id="page" resultType="com.gltqe.wladmin.system.entity.vo.SysUserVo">
+        <include refid="userListSelect"/>
+        <include refid="userListWhere"/>
+
+    </select>
+
+    <select id="getList" resultType="com.gltqe.wladmin.system.entity.vo.SysUserVo">
+        <include refid="userListSelect"/>
+        <include refid="userListWhere"/>
+    </select>
+
+    <select id="getListByIds" resultType="com.gltqe.wladmin.system.entity.vo.SysUserVo">
+        <include refid="userListSelect"/>
+        <where>
+            <if test="list!=null and list.size()>0">
+                u.id in
+                <foreach collection="list" item="item" open="(" close=")" separator="," index="index">
+                    #{item}
+                </foreach>
+            </if>
+        </where>
+    </select>
+
+
+    <select id="getListByUser" resultType="com.gltqe.wladmin.system.entity.po.SysUser">
+        select id,username,cn_name from sys_user su where su.is_delete='0' and su.status = '0'
+    </select>
+</mapper>

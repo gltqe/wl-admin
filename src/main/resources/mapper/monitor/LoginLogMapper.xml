@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gltqe.wladmin.monitor.mapper.LoginLogMapper">
+    <select id="page" resultType="com.gltqe.wladmin.monitor.entity.vo.LoginLogVo">
+        select
+        ll.id,
+        ll.uid,
+        ll.username,
+        ll.dept_id,
+        ll.ip,
+        ll.browser,
+        ll.os,
+        ll.time,
+        ll.type,
+        ll.is_delete,
+        su.cn_name,
+        sd.name deptName
+        from log_login ll
+        left join sys_user su on ll.uid = su.id
+        left join sys_dept sd on ll.dept_id = sd.id
+        <where>
+            <if test="params.cnName!=null and params.cnName!=''">
+                and su.cn_name like CONCAT('%',#{params.cnName} ,'%')
+            </if>
+            <if test="params.username!=null and params.username!=''">
+                and ll.username like CONCAT('%',#{params.username} ,'%')
+            </if>
+            <if test="params.deptId!=null and params.deptId!=''">
+                and ll.dept_id = #{params.deptId}
+            </if>
+            <if test="params.startDateTime!=null and params.startDateTime!=''">
+                and ll.time >= #{params.startDateTime}
+            </if>
+            <if test="params.endDateTime!=null and params.endDateTime!=''">
+                and ll.time <![CDATA[<=]]> #{params.endDateTime}
+            </if>
+        </where>
+        order by ll.time desc
+    </select>
+
+</mapper>

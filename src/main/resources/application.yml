@@ -1,0 +1,22 @@
+server:
+  port: 9000
+  servlet:
+    context-path: /wl
+
+
+spring:
+  application:
+    name: wl
+  profiles:
+    active: dev
+  jackson:
+    # 不返回null的字段
+    default-property-inclusion: non_null
+    # 配置 Date 类的时间格式
+    date-format: yyyy-MM-dd HH:mm:ss
+    # 配置 Date 类的时区
+    time-zone: GMT+8
+  servlet:
+    multipart:
+      max-file-size: 100MB
+      max-request-size: 200MB

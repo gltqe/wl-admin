@@ -1,0 +1,76 @@
+spring:
+  datasource:
+    dynamic:
+      hikari:
+        #连接池名称
+        pool-name: wl-datasource
+        #最小空闲数
+        min-idle: 10
+        #连接池中允许最大连接数 缺省值:10
+        max-pool-size: 30
+        #等待来自池的连接的最大毫秒数
+        connection-timeout: 30000
+        #连接的最长生命周期 配置为0永不过期
+        max-lifetime: 30000
+        #连接将被测试活动的最大时间量
+        validation-timeout: 30000
+        #连接允许在池中闲置的最长时间
+        idle-timeout: 300000
+      primary: localhost
+      datasource:
+        localhost:
+          driver-class-name: com.mysql.cj.jdbc.Driver
+          url: jdbc:mysql://127.0.0.1:3306/wl-admin?useSSL=false&useUnicode=true&characterEncoding=utf-8&zeroDateTimeBehavior=convertToNull&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai
+          username: root
+          password: 123456
+  #redis
+  data:
+    redis:
+      database: 12
+      host: 127.0.0.1
+      port: 6379
+      # 连接超时
+      timeout: 5000
+      password:
+      lettuce:
+        #在关闭客户端连接之前等待任务处理完成的最长时间，在这之后，无论任务是否执行完成，都会被执行器关闭，默认100ms
+        shutdown-timeout: 1000
+        pool:
+          #连接池最大连接数（使用负值表示没有限制）
+          max-active: 50
+          #连接池最大阻塞等待时间（使用负值表示没有限制）
+          max-wait: 3000
+          #连接池中的最大空闲连接
+          max-idle: 20
+          #连接池中的最小空闲连接
+          min-idle: 2
+
+#mybatis-plus 配置
+mybatis-plus:
+  configuration:
+    #打印日志 生产环境需关闭 影响效率
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+#  mapper-locations: classpath*:com/**/mapper/*Mapper.xml
+
+# token
+token:
+  # accessToken过期时间 2小时
+  access-ttl: 7200
+  # refreshToken过期时间 30天
+  refresh-ttl: 2592000
+  # 刷新token间隔时间 必须小于accessToken过期时间 半小时
+  refresh-space: 1800
+  # 对称秘钥
+  secret: MTIzNDU2
+
+# 日志设置
+logging:
+  # 设置文件，可以是绝对路径，也可以是相对路径
+  file:
+    path: .\log
+
+# 上传地址 可改为nginx代理
+upload:
+  path:
+    # 头像存储地址，可以是绝对路径，也可以是相对路径
+    avatar: .\avatar

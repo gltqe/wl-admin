@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+scan:当此属性设置为true时，配置文档如果发生改变，将会被重新加载，默认值为true
+scanPeriod:设置监测配置文档是否有修改的时间间隔，如果没有给出时间单位，默认单位是毫秒。
+                 当scan为true时，此属性生效。默认的时间间隔为1分钟。
+debug:当此属性设置为true时，将打印出logback内部日志信息，实时查看logback行状态。默认值为false。
+-->
+<configuration scan="true" scanPeriod="60 seconds" debug="false">
+    <!--    指定名称 -->
+    <contextName>log-Test</contextName>
+    <!--    用来定义变量值的标签，springboot中更适合springProperty
+    有两个属性，name和value；其中name的值是变量的名称，value的值时变量定义的值。
+    通过定义的值会被插入到logger上下文中。定义变量后，可以使“${}”来使用变量。-->
+    <!--    <property name="logDir" value="${logging.file.path}"></property>-->
+    <!--    读取yml配置-->
+    <springProperty scope="context" name="log_path" source="logging.file.path"/>
+    <springProperty scope="context" name="module_name" source="spring.application.name"/>
+    <!--    彩色日志-->
+    <!-- 日志格式和颜色渲染 -->
+    <!-- 彩色日志依赖的渲染类 -->
+    <conversionRule conversionWord="clr" converterClass="org.springframework.boot.logging.logback.ColorConverter"/>
+    <conversionRule conversionWord="wex"
+                    converterClass="org.springframework.boot.logging.logback.WhitespaceThrowableProxyConverter"/>
+    <conversionRule conversionWord="wEx"
+                    converterClass="org.springframework.boot.logging.logback.ExtendedWhitespaceThrowableProxyConverter"/>
+    <!-- 彩色日志格式 -->
+    <property name="CONSOLE_LOG_PATTERN"
+              value="${CONSOLE_LOG_PATTERN:-%clr(%d{yyyy-MM-dd HH:mm:ss.SSS}){faint} %clr(${LOG_LEVEL_PATTERN:-%5p}) %clr(${PID:- }){magenta} %clr(---){faint} %clr([%15.15t]){faint} %clr(%-40.40logger{39}){cyan} %clr(:){faint} %m%n${LOG_EXCEPTION_CONVERSION_WORD:-%wEx}}"/>
+
+
+    <!--    appender用来格式化日志输出节点，有俩个属性name和class，class用来指定哪种输出策略，常用就是控制台输出策略和文件输出策略。-->
+    <!--输出到日志-->
+    <appender name="console_log" class="ch.qos.logback.core.ConsoleAppender">
+        <!-- 控制输出级别: 如果yml中配置了 则以yml中为准   注释filter: 以springProfile中的root控制输出级别 不注释的话 会以filter为准 -->
+        <!--        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">-->
+        <!--            <level>info</level>-->
+        <!--        </filter>-->
+        <!--        打印格式-->
+        <layout class="ch.qos.logback.classic.PatternLayout">
+            <pattern>${CONSOLE_LOG_PATTERN}</pattern>
+        </layout>
+    </appender>
+    <!--输出到文件 如果需要按debug、info、warn、error分文件 需要创建多个appender用filter过滤-->
+    <appender name="console_file" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <!--        过滤级别 注释filter: 以springProfile中的root控制输出级别 不注释的话 会以filter为准 -->
+        <!--        <filter class="ch.qos.logback.classic.filter.LevelFilter">-->
+        <!--过滤,只打印debug-->
+        <!--            <level>debug</level>-->
+        <!--匹配到就接收-->
+        <!--            <onMatch>ACCEPT</onMatch>-->
+        <!--没有匹配到就禁止-->
+        <!--            <onMismatch>DENY</onMismatch>-->
+        <!--        </filter>-->
+        <!-- 日志记录器的滚动策略，按日期，按大小记录 -->
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <!-- 日志归档 -->
+            <fileNamePattern>${log_path}/${module_name}-%d{yyyy-MM-dd}-%i.log</fileNamePattern>
+            <!-- 日志文件的最大大小 -->
+            <maxFileSize>100MB</maxFileSize>
+            <!--日志文件总大小-->
+            <totalSizeCap>3GB</totalSizeCap>
+            <!--日志文档保留天数-->
+            <maxHistory>30</maxHistory>
+        </rollingPolicy>
+        <!--日志文档输出格式-->
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{50} - %msg%n</pattern>
+            <!-- 设置字符集 -->
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+    <!--    指定开发环境-->
+    <springProfile name="local">
+        <!--    root节点是必选节点，用来指定最基础的日志输出级别，只有一个level属性 -->
+        <root level="info">
+            <!-- 选择配置-->
+            <appender-ref ref="console_log"/>
+            <appender-ref ref="console_file"/>
+        </root>
+    </springProfile>
+    <springProfile name="dev">
+        <!--    root节点是必选节点，用来指定最基础的日志输出级别，只有一个level属性 -->
+        <root level="info">
+            <!-- 选择配置-->
+            <appender-ref ref="console_log"/>
+            <appender-ref ref="console_file"/>
+        </root>
+    </springProfile>
+    <springProfile name="test">
+        <root level="info">
+            <appender-ref ref="console_log"/>
+            <appender-ref ref="console_file"/>
+        </root>
+    </springProfile>
+    <springProfile name="prop">
+        <root level="info">
+            <appender-ref ref="console_log"/>
+            <appender-ref ref="console_file"/>
+        </root>
+    </springProfile>
+</configuration>
