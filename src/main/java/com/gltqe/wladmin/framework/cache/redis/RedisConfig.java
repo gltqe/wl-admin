@@ -1,4 +1,4 @@
-package com.gltqe.wladmin.framework.redis;
+package com.gltqe.wladmin.framework.cache.redis;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.databind.jsontype.impl.LaissezFaireSubTypeValidator;
 import jakarta.annotation.Resource;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
@@ -27,6 +28,7 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
  **/
 
 @Configuration
+@ConditionalOnProperty(prefix = "cache",value = "type", havingValue = "redis")
 public class RedisConfig {
 
     @Resource

@@ -63,6 +63,11 @@ token:
   # 对称秘钥
   secret: MTIzNDU2
 
+# 缓存
+cache:
+  # redis 或 local
+  type: redis
+
 # 日志设置
 logging:
   # 设置文件，可以是绝对路径，也可以是相对路径

@@ -13,6 +13,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Paths;
+import java.util.Optional;
 
 @Slf4j
 @Configuration
@@ -20,7 +21,8 @@ import java.nio.file.Paths;
 public class WebConfig implements WebMvcConfigurer {
 
     @Resource
-    private ApiLimitInterceptor apiLimitInterceptor;
+    private Optional<ApiLimitInterceptor> apiLimitInterceptor;
+
     /**
      * 头像存储路径
      */
@@ -29,8 +31,9 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
-        registry.addInterceptor(apiLimitInterceptor).addPathPatterns("/**");
-
+        apiLimitInterceptor.ifPresent(apiLimitInterceptor -> {
+            registry.addInterceptor(apiLimitInterceptor).addPathPatterns("/**");
+        });
     }
 
     /**

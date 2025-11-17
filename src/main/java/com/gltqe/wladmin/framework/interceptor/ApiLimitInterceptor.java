@@ -10,6 +10,7 @@ import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.script.RedisScript;
@@ -27,6 +28,7 @@ import java.util.Arrays;
  * @date 2022/7/3 2:18
  **/
 @Configuration
+@ConditionalOnProperty(prefix = "cache",value = "type", havingValue = "redis")
 public class ApiLimitInterceptor implements HandlerInterceptor {
 
     @Resource
@@ -80,7 +82,7 @@ public class ApiLimitInterceptor implements HandlerInterceptor {
     }
 
     @Override
-    public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) throws Exception {
+    public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex)  {
 
     }
 }

@@ -213,8 +213,7 @@ public class SysApiLimitServiceImpl extends ServiceImpl<SysApiLimitMapper, SysAp
     public void initApiLimit(SysApiLimit sysApiLimit) {
         String uri = sysApiLimit.getUri();
         cleanApiLimit(uri);
-        SetOperations<String,String> setOperations = redisTemplate.opsForSet();
-        setOperations.add(Constant.LIMIT_URL_KEY, uri);
+        redisTemplate.opsForSet().add(Constant.LIMIT_URL_KEY, uri);
         String singleLimiterRate = sysApiLimit.getSingleLimiterRate();
         Long singleTimeSecond = sysApiLimit.getSingleTimeSecond();
         String wholeLimiterRate = sysApiLimit.getWholeLimiterRate();

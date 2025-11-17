@@ -1,4 +1,4 @@
-package com.gltqe.wladmin.framework.redis;
+package com.gltqe.wladmin.framework.cache.redis;
 
 import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONReader;
