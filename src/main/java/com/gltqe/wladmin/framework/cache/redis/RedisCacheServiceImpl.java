@@ -1,30 +1,93 @@
 package com.gltqe.wladmin.framework.cache.redis;
 
+import cn.hutool.json.JSONUtil;
 import com.gltqe.wladmin.framework.cache.CacheService;
 import jakarta.annotation.Resource;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.core.RedisTemplate;
 
+import java.util.Set;
+
 /**
  * @author gltqe
  * @date 2025/3/21 17:29
  */
 @Configuration
-@ConditionalOnProperty(prefix = "cache",value = "type", havingValue = "redis")
+@ConditionalOnProperty(prefix = "cache", value = "type", havingValue = "redis")
 public class RedisCacheServiceImpl implements CacheService {
 
     @Resource
-    private RedisTemplate<String,String> redisTemplate;
+    private RedisTemplate<String, String> redisTemplate;
 
+    /**
+     * 设置缓存键值对
+     * @param key
+     * @param value
+     */
     @Override
     public void set(String key, Object value) {
         redisTemplate.opsForValue().set(key, value.toString());
     }
 
+    /**
+     * 设置缓存键值对、缓存时间
+     * @param key
+     * @param value
+     * @param ttl
+     */
+    @Override
+    public void set(String key, Object value, long ttl) {
+        redisTemplate.opsForValue().set(key, JSONUtil.toJsonStr(value), ttl);
+    }
+
+    /**
+     * 获取缓存值
+     * @param key
+     */
     @Override
     public Object get(String key) {
         return redisTemplate.opsForValue().get(key);
     }
 
+
+    /**
+     * 删除缓存
+     * @param key
+     */
+    @Override
+    public void delete(String key) {
+        redisTemplate.delete(key);
+    }
+
+    /**
+     * 获取所有符合条件的key（本地缓存只支持 * ）
+     * @param key
+     * @return
+     */
+    @Override
+    public Set<String> keys(String key) {
+        return redisTemplate.keys(key);
+    }
+
+    /**
+     * 判断是否包含key
+     * @param key
+     * @return
+     */
+    @Override
+    public boolean containsKey(String key) {
+        return redisTemplate.hasKey(key);
+    }
+
+    /**
+     * 是否包含
+     * @param key
+     * @param member
+     * @return
+     */
+    @Override
+    public boolean isMember(String key, String member) {
+        return Boolean.TRUE.equals(redisTemplate.opsForSet().isMember(key, member));
+    }
 }

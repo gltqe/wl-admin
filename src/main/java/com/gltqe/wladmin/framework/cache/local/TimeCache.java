@@ -1,6 +1,8 @@
 package com.gltqe.wladmin.framework.cache.local;
 
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledFuture;
 
@@ -93,6 +95,7 @@ public class TimeCache<K, V> {
     }
 
     /**
+     * 获取缓存值并自动延期
      * @param key
      * @param autoExt
      * @author gltqe
@@ -168,4 +171,40 @@ public class TimeCache<K, V> {
     }
 
 
+    /**
+     * 获取所有符合条件的key（本地缓存只支持 * ）
+     * @param pattern
+     * @return
+     */
+    public Set<K> keys(String pattern) {
+        if ("*".equals(pattern)) {
+            return MAP.keySet();
+        }
+        Set<K> keys = new HashSet<>();
+        if (pattern.contains("*")) {
+            String regex = pattern.replace("*", ".*");
+            for (K key : MAP.keySet()) {
+                if (key.toString().matches(regex)) {
+                    keys.add(key);
+                }
+            }
+        }
+        return keys;
+    }
+
+    /**
+     * 是否包含
+     * @param key
+     * @param member
+     * @return
+     */
+    public boolean isMember(K key, K member) {
+        CacheObj<K, V> kvCacheObj = MAP.get(key);
+        V value = kvCacheObj.getValue();
+        if (value instanceof Set<?>) {
+            return ((Set<?>) value).contains(member);
+        } else {
+            return false;
+        }
+    }
 }
