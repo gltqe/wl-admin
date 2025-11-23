@@ -3,7 +3,9 @@ package com.gltqe.wladmin.system.controller;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.gltqe.wladmin.commons.common.Constant;
 import com.gltqe.wladmin.commons.common.Result;
+import com.gltqe.wladmin.commons.enums.OperationLogTypeEnum;
 import com.gltqe.wladmin.commons.utils.CheckUtil;
+import com.gltqe.wladmin.framework.log.Log;
 import com.gltqe.wladmin.system.entity.dto.PasswordDto;
 import com.gltqe.wladmin.system.entity.dto.SysUserDto;
 import com.gltqe.wladmin.system.entity.vo.SysUserVo;
@@ -50,6 +52,7 @@ public class SysUserController {
      * @author gltqe
      * @date 2023/5/18 15:04
      **/
+    @Log(name = "分页查询用户", type = OperationLogTypeEnum.QUERY, recordParams = true, recordResult = true)
     @RequestMapping("/page")
     @PreAuthorize("@am.hasPermission('user:list:query')")
     public Result page(@RequestBody SysUserDto sysUserDto) {
@@ -82,8 +85,8 @@ public class SysUserController {
      **/
     @RequestMapping("/add")
     @PreAuthorize("@am.hasPermission('user:list:add')")
-    public Result add(@ModelAttribute SysUserDto sysUserDto, @RequestPart(value = "avatarFile",required = false) MultipartFile avatarFile) {
-        sysUserService.add(sysUserDto,avatarFile);
+    public Result add(@ModelAttribute SysUserDto sysUserDto, @RequestPart(value = "avatarFile", required = false) MultipartFile avatarFile) {
+        sysUserService.add(sysUserDto, avatarFile);
         return Result.ok();
     }
 
@@ -112,8 +115,8 @@ public class SysUserController {
      **/
     @RequestMapping("/update")
     @PreAuthorize("@am.hasPermission('user:list:update')")
-    public Result update(@ModelAttribute SysUserDto sysUserDto, @RequestPart(value = "avatarFile",required = false) MultipartFile avatarFile) {
-        sysUserService.updateUser(sysUserDto,avatarFile);
+    public Result update(@ModelAttribute SysUserDto sysUserDto, @RequestPart(value = "avatarFile", required = false) MultipartFile avatarFile) {
+        sysUserService.updateUser(sysUserDto, avatarFile);
         return Result.ok();
     }
 
@@ -206,7 +209,7 @@ public class SysUserController {
      * @date 2023/5/19 8:57
      **/
     @RequestMapping("/updateSelf")
-    public Result updateSelf(@ModelAttribute SysUserDto sysUserDto, @RequestPart(value = "avatar",required = false) MultipartFile avatarFile) {
+    public Result updateSelf(@ModelAttribute SysUserDto sysUserDto, @RequestPart(value = "avatar", required = false) MultipartFile avatarFile) {
 //        SysUserDto sysUserVo = JSONObject.parseObject(user, SysUserDto.class);
         sysUserService.updateSelf(sysUserDto, avatarFile);
         return Result.ok();
@@ -220,9 +223,10 @@ public class SysUserController {
      * @param response
      * return
      */
+    @Log(name = "导出用户", type = OperationLogTypeEnum.EXPORT, recordParams = true, recordResult = true)
     @RequestMapping("/exportUser")
-    public void exportUser(@RequestBody SysUserDto sysUserDto, HttpServletResponse response){
-        sysUserService.exportUser(sysUserDto,response);
+    public void exportUser(@RequestBody SysUserDto sysUserDto, HttpServletResponse response) {
+        sysUserService.exportUser(sysUserDto, response);
     }
 
 }

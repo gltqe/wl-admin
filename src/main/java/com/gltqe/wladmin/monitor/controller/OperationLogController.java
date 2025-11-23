@@ -38,7 +38,7 @@ public class OperationLogController {
      **/
     @RequestMapping("/page")
     @PreAuthorize("@am.hasPermission('operation:list:query')")
-    @Log(name = "操作日志-分页查询", type = OperationLogTypeEnum.QUERY, recordParams = true, recordResult = true)
+//    @Log(name = "操作日志-分页查询", type = OperationLogTypeEnum.QUERY, recordParams = true, recordResult = true)
     public Result getRolePageByUser(@RequestBody OperationLogDto operationLogDto) {
         IPage<OperationLogVo> iPage = operationLogService.page( operationLogDto);
         return Result.ok(iPage);

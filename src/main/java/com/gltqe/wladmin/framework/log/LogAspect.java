@@ -11,12 +11,14 @@ import com.gltqe.wladmin.commons.utils.SpringContextUtil;
 import com.gltqe.wladmin.monitor.service.OperationLogService;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.annotation.*;
 import org.aspectj.lang.reflect.MethodSignature;
 import org.springframework.stereotype.Component;
 
+import java.util.Arrays;
 import java.util.Date;
 
 /**
@@ -160,7 +162,11 @@ public class LogAspect {
                 //  String[] parameterNames = signature.getParameterNames();
                 // 参数值
                 Object[] args = point.getArgs();
-                String params = JSONObject.toJSONString(args);
+                // 排除 HttpServletResponse 和 HttpServletRequest 避免导出、下载接口出错
+                Object[] filteredArgs = Arrays.stream(args)
+                        .filter(arg -> !(arg instanceof HttpServletResponse) && !(arg instanceof HttpServletRequest))
+                        .toArray();
+                String params = JSONObject.toJSONString(filteredArgs);
                 if (params.length() > SAVE_LENGTH) {
                     params = params.substring(0, SAVE_LENGTH);
                 }

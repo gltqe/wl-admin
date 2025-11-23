@@ -1,7 +1,7 @@
 package com.gltqe.wladmin.framework.cache;
 
 import cn.hutool.extra.spring.SpringUtil;
-import cn.hutool.json.JSONUtil;
+import com.alibaba.fastjson2.JSONObject;
 
 import java.util.Set;
 
@@ -52,7 +52,7 @@ public class CacheUtil {
         if (o == null) {
             return null;
         } else {
-            return JSONUtil.parseObj(o).toBean(tClass);
+            return JSONObject.parseObject(JSONObject.toJSONString(o), tClass);
         }
     }
 

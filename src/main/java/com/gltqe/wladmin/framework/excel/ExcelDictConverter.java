@@ -7,6 +7,7 @@ import com.alibaba.excel.metadata.data.ReadCellData;
 import com.alibaba.excel.metadata.data.WriteCellData;
 import com.alibaba.excel.metadata.property.ExcelContentProperty;
 import com.gltqe.wladmin.commons.utils.DictUtil;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * @author gltqe
@@ -29,9 +30,16 @@ public class ExcelDictConverter implements Converter<Object> {
     }
 
     @Override
-    public WriteCellData<?> convertToExcelData(Object value, ExcelContentProperty contentProperty, GlobalConfiguration globalConfiguration) throws Exception {
+    public WriteCellData<?> convertToExcelData(Object value, ExcelContentProperty contentProperty, GlobalConfiguration globalConfiguration) {
+        if (value == null) {
+           return new WriteCellData<>("");
+        }
         Dict annotation = contentProperty.getField().getAnnotation(Dict.class);
-        String dictText = DictUtil.getDictText(annotation,value);
-        return new WriteCellData<>(dictText);
+        String dictText = DictUtil.getDictText(annotation, value);
+        if (StringUtils.isBlank(dictText)) {
+            return new WriteCellData<>(String.valueOf(value));
+        } else {
+            return new WriteCellData<>(dictText);
+        }
     }
 }
