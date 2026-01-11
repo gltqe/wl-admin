@@ -1,6 +1,7 @@
 package com.gltqe.wladmin.framework.cache;
 
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author gltqe
@@ -28,11 +29,52 @@ public interface CacheService {
     }
 
     /**
+     * 设置缓存键值对、缓存时间、时间单位
+     * @param key
+     * @param value
+     * @param ttl
+     * @param timeUnit
+     */
+    default void set(String key, Object value, long ttl, TimeUnit timeUnit) {
+        throw new RuntimeException("未实现[set]方法");
+    }
+
+    /**
      * 获取缓存值
      * @param key
      */
     default Object get(String key) {
         throw new RuntimeException("未实现[get]方法");
+    }
+
+    /**
+     * 获取缓存值并自动延期 (初始设置的过期时间) (local实现)
+     * @param key
+     * @param autoExt
+     * @return
+     */
+    default Object get(String key, boolean autoExt) {
+        throw new RuntimeException("未实现[get]方法");
+    }
+
+    /**
+     * 获取缓存值并自动延期 (自定义延期时间) (redis实现)
+     * @param key
+     * @param ttl
+     * @param timeUnit
+     * @return
+     */
+    default Object get(String key, long ttl, TimeUnit timeUnit) {
+        throw new RuntimeException("未实现[get]方法");
+    }
+
+    /**
+     * 获取剩余过期时间
+     * @param key
+     * @return
+     */
+    default long getRemainExpire(String key) {
+        throw new RuntimeException("未实现[getRemainExpire]方法");
     }
 
     /**
@@ -69,5 +111,17 @@ public interface CacheService {
      */
     default boolean isMember(String key, String member) {
         throw new RuntimeException("未实现[isMember]方法");
+    }
+
+    /**
+     * 当key不存在时保存
+     * @param key
+     * @param value
+     * @param ttl
+     * @param timeUnit
+     * @return
+     */
+    default boolean setIfAbsent(String key, Object value, long ttl, TimeUnit timeUnit) {
+        throw new RuntimeException("未实现[setIfAbsent]方法");
     }
 }

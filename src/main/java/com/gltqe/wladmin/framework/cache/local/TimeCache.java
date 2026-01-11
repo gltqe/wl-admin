@@ -24,7 +24,12 @@ public class TimeCache<K, V> {
      */
     private final long defaultTtl;
 
-
+    /**
+     * 初始化
+     * @param capacity 容量
+     * @param defaultTtl 默认过期时间
+     * @param period 过期检测周期
+     */
     public TimeCache(int capacity, long defaultTtl, long period) {
         this.capacity = capacity;
         this.defaultTtl = defaultTtl;
@@ -34,6 +39,7 @@ public class TimeCache<K, V> {
     }
 
     /**
+     * 清理过期key
      * @author gltqe
      * @date 2025/3/28 13:32
      * return

@@ -61,7 +61,7 @@ public class GlobalCleanTimer {
      * 启动定时任务
      */
     public ScheduledFuture<?> schedule(Runnable task, long period) {
-        return this.executor.scheduleAtFixedRate(task, period, period, TimeUnit.MILLISECONDS);
+        return this.executor.scheduleAtFixedRate(task, period, period, TimeUnit.SECONDS);
     }
 
     /**

@@ -67,6 +67,10 @@ token:
 cache:
   # redis 或 local
   type: redis
+  # local默认过期时间 -1:永不过期
+  local-default-ttl: -1
+  # 过期key检测周期(秒)
+  local-period: 3
 
 # 日志设置
 logging:

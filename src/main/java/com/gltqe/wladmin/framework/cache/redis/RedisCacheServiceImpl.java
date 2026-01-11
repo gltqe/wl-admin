@@ -8,6 +8,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.core.RedisTemplate;
 
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author gltqe
@@ -18,7 +19,7 @@ import java.util.Set;
 public class RedisCacheServiceImpl implements CacheService {
 
     @Resource
-    private RedisTemplate<String, String> redisTemplate;
+    private RedisTemplate<String, Object> redisTemplate;
 
     /**
      * 设置缓存键值对
@@ -42,6 +43,18 @@ public class RedisCacheServiceImpl implements CacheService {
     }
 
     /**
+     * 设置缓存键值对、缓存时间、时间单位
+     * @param key
+     * @param value
+     * @param ttl
+     * @param timeUnit
+     */
+    @Override
+    public void set(String key, Object value, long ttl, TimeUnit timeUnit) {
+        redisTemplate.opsForValue().set(key, value, ttl, timeUnit);
+    }
+
+    /**
      * 获取缓存值
      * @param key
      */
@@ -50,6 +63,28 @@ public class RedisCacheServiceImpl implements CacheService {
         return redisTemplate.opsForValue().get(key);
     }
 
+    /**
+     * 获取缓存值并自动延期
+     * @param key
+     */
+    @Override
+    public Object get(String key, long ttl, TimeUnit timeUnit) {
+        Object object = get(key);
+        if (object != null) {
+            redisTemplate.expire(key, ttl, timeUnit);
+        }
+        return object;
+    }
+
+    /**
+     * 获取剩余过期时间
+     * @param key
+     * @return
+     */
+    @Override
+    public long getRemainExpire(String key) {
+        return redisTemplate.getExpire(key);
+    }
 
     /**
      * 删除缓存
@@ -81,7 +116,7 @@ public class RedisCacheServiceImpl implements CacheService {
     }
 
     /**
-     * 是否包含
+     * set中是否包含
      * @param key
      * @param member
      * @return
@@ -89,5 +124,18 @@ public class RedisCacheServiceImpl implements CacheService {
     @Override
     public boolean isMember(String key, String member) {
         return Boolean.TRUE.equals(redisTemplate.opsForSet().isMember(key, member));
+    }
+
+    /**
+     * 当key不存在时保存
+     * @param key
+     * @param value
+     * @param ttl
+     * @param timeUnit
+     * @return
+     */
+    @Override
+    public boolean setIfAbsent(String key, Object value, long ttl, TimeUnit timeUnit) {
+        return redisTemplate.opsForValue().setIfAbsent(key, value, ttl, timeUnit);
     }
 }
