@@ -4,6 +4,7 @@ import cn.hutool.extra.spring.SpringUtil;
 import com.alibaba.fastjson2.JSONObject;
 
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 /**
  * 缓存工具类
@@ -57,6 +58,15 @@ public class CacheUtil {
     }
 
     /**
+     * 获取剩余过期时间
+     * @param key
+     * @return
+     */
+    public static long getRemainExpire(String key) {
+        return cacheService.getRemainExpire(key);
+    }
+
+    /**
      * 删除缓存
      * @param key
      */
@@ -89,6 +99,28 @@ public class CacheUtil {
      * @return
      */
     public static boolean isMember(String key, String member) {
-        return cacheService.isMember(key,member);
+        return cacheService.isMember(key, member);
+    }
+
+    /**
+     * 当key不存在时保存
+     * @param key
+     * @param value
+     * @param ttl
+     * @param timeUnit
+     * @return
+     */
+    public boolean setIfAbsent(String key, Object value, long ttl, TimeUnit timeUnit) {
+        return cacheService.setIfAbsent(key, value, ttl, timeUnit);
+    }
+
+    /**
+     * hashmap put方法
+     * @param key
+     * @param hashKey
+     * @param value
+     */
+    public void hashPut(String key, String hashKey, Object value) {
+        cacheService.hashPut(key, hashKey, value);
     }
 }

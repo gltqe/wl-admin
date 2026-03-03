@@ -1,12 +1,16 @@
 package com.gltqe.wladmin.framework.cache.local;
 
 import cn.hutool.extra.spring.SpringUtil;
+import com.gltqe.wladmin.commons.exception.WlException;
 import com.gltqe.wladmin.commons.utils.SpringContextUtil;
 import com.gltqe.wladmin.framework.cache.CacheProperties;
 import com.gltqe.wladmin.framework.cache.CacheService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Configuration;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -14,6 +18,7 @@ import java.util.concurrent.TimeUnit;
  * @author gltqe
  * @date 2025/3/20 15:20
  */
+@Slf4j
 @Configuration
 @ConditionalOnProperty(prefix = "cache", value = "type", havingValue = "local")
 public class LocalCacheServiceImpl implements CacheService {
@@ -72,6 +77,18 @@ public class LocalCacheServiceImpl implements CacheService {
     @Override
     public Object get(String key, boolean autoExt) {
         return TIMED_CACHE.get(key, autoExt);
+    }
+
+    /**
+     * 获取缓存值并自动延期 (自定义延期时间) (redis实现)
+     * @param key
+     * @param ttl
+     * @param timeUnit
+     * @return
+     */
+    @Override
+    public Object get(String key, long ttl, TimeUnit timeUnit) {
+        throw new RuntimeException("[local]未实现此方法,请尝试其他类型缓存");
     }
 
     /**
@@ -141,6 +158,24 @@ public class LocalCacheServiceImpl implements CacheService {
             long seconds = timeUnit.toSeconds(ttl);
             TIMED_CACHE.put(key, value, seconds);
             return true;
+        }
+    }
+
+    @Override
+    public void hashPut(String key, String hashKey, Object value) {
+        if (TIMED_CACHE.containsKey(key)) {
+            Object o = TIMED_CACHE.get(key);
+            if (o instanceof Map) {
+                @SuppressWarnings("unchecked")
+                Map<String, Object> hashMap = (Map<String, Object>) o;
+                hashMap.put(hashKey, value);
+            } else {
+                throw new WlException("缓存类型异常，请检查后重试");
+            }
+        } else {
+            Map<String, Object> hashMap = new HashMap<String, Object>();
+            hashMap.put(hashKey, value);
+            TIMED_CACHE.put(key, hashMap);
         }
     }
 }

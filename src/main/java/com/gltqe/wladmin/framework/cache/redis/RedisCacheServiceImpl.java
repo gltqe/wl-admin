@@ -64,6 +64,17 @@ public class RedisCacheServiceImpl implements CacheService {
     }
 
     /**
+     * 获取缓存值并自动延期 (初始设置的过期时间) (local实现)
+     * @param key
+     * @param autoExt
+     * @return
+     */
+    @Override
+    public Object get(String key, boolean autoExt) {
+        throw new RuntimeException("[redis]未实现此方法,请尝试其他类型缓存");
+    }
+
+    /**
      * 获取缓存值并自动延期
      * @param key
      */
@@ -137,5 +148,16 @@ public class RedisCacheServiceImpl implements CacheService {
     @Override
     public boolean setIfAbsent(String key, Object value, long ttl, TimeUnit timeUnit) {
         return redisTemplate.opsForValue().setIfAbsent(key, value, ttl, timeUnit);
+    }
+
+    /**
+     * hashmap put方法
+     * @param key
+     * @param hashKey
+     * @param value
+     */
+    @Override
+    public void hashPut(String key, String hashKey, Object value) {
+        redisTemplate.boundHashOps(key).put(hashKey, value);
     }
 }

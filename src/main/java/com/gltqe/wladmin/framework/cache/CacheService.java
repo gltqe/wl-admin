@@ -124,4 +124,24 @@ public interface CacheService {
     default boolean setIfAbsent(String key, Object value, long ttl, TimeUnit timeUnit) {
         throw new RuntimeException("未实现[setIfAbsent]方法");
     }
+
+    /**
+     * hashmap put方法
+     * @param key
+     * @param hashKey
+     * @param value
+     * @return
+     */
+    default void hashPut(String key, String hashKey, Object value) {
+        throw new RuntimeException("未实现[hashPut]方法");
+    }
+
+//    /**
+//     * set add方法
+//     * @param key
+//     * @param values
+//     */
+//    default void setAdd(String key, Object... values) {
+//
+//    }
 }

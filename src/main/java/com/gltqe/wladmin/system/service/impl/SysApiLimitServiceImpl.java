@@ -222,7 +222,6 @@ public class SysApiLimitServiceImpl extends ServiceImpl<SysApiLimitMapper, SysAp
             String singleKey = Constant.LIMIT_SINGLE_KEY + uri;
             BoundHashOperations<String, String, Object> hashOps = redisTemplate.boundHashOps(singleKey);
             hashOps.put("size", sysApiLimit.getSingleFrequency());
-//            hashOps.put("rate", singleLimiterRate);
             hashOps.put("time", singleTimeSecond);
             hashOps.put("timeMicro", TimeUnitUtil.convert(new BigDecimal(singleTimeSecond), TimeUnitUtil.SECOND, TimeUnitUtil.MICROSECOND, 0));
         }
@@ -231,7 +230,6 @@ public class SysApiLimitServiceImpl extends ServiceImpl<SysApiLimitMapper, SysAp
             String wholeKey = Constant.LIMIT_WHOLE_KEY + uri;
             BoundHashOperations<String, String, Object> hashOps = redisTemplate.boundHashOps(wholeKey);
             hashOps.put("size", sysApiLimit.getWholeFrequency());
-//            hashOps.put("rate", wholeLimiterRate);
             hashOps.put("time", sysApiLimit.getWholeTimeSecond());
             hashOps.put("timeMicro", TimeUnitUtil.convert(new BigDecimal(sysApiLimit.getWholeTimeSecond()), TimeUnitUtil.SECOND, TimeUnitUtil.MICROSECOND, 0));
         }
