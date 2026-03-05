@@ -12,6 +12,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.script.RedisScript;
 import org.springframework.web.servlet.HandlerInterceptor;
@@ -28,8 +29,9 @@ import java.util.Arrays;
  * @date 2022/7/3 2:18
  **/
 @Configuration
-@ConditionalOnProperty(prefix = "cache",value = "type", havingValue = "redis")
-public class ApiLimitInterceptor implements HandlerInterceptor {
+@ConditionalOnProperty(prefix = "cache", value = "type", havingValue = "redis")
+@Order(2)
+public class SingleApiLimitInterceptor implements HandlerInterceptor {
 
     @Resource
     private RedisTemplate<String, Object> redisTemplate;
@@ -41,28 +43,20 @@ public class ApiLimitInterceptor implements HandlerInterceptor {
     private String contextPath;
 
     @Override
-    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
+    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
         String requestURI = request.getRequestURI();
         String uri = requestURI.replaceFirst(contextPath, "");
-        boolean member = Boolean.TRUE.equals(redisTemplate.opsForSet().isMember(Constant.LIMIT_URL_KEY, uri));
-        if (member) {
-            String singleKey = Constant.LIMIT_SINGLE_KEY + uri;
-            String wholeKey = Constant.LIMIT_WHOLE_KEY + uri;
-            String wholeLimiterKey = Constant.LIMIT_WHOLE_LIMITER_KEY + uri;
-            String singleUserKey = "";
-            // 不需登录接口 无法获取用户名 改为IP限制
-            if (JwtUtil.isLogin()) {
-                singleUserKey = singleKey + ":" + JwtUtil.getUsername();
-            } else {
-                singleUserKey = singleKey + ":" + IpUtil.getIpAddress(request);
-            }
-            long value = redisTemplate.execute(limitScript, Arrays.asList(singleKey, singleUserKey, wholeKey, wholeLimiterKey));
-            if (Constant.LIMIT_SINGLE_EXCEED == value) {
-                throw new LimitException("您的访问频率过高,请稍后尝试");
-            }
-            if (Constant.LIMIT_WHOLE_EXCEED == value) {
-                throw new LimitException("当前接口访问频率过高,请稍后尝试");
-            }
+        String singleKey = Constant.LIMIT_SINGLE_KEY + uri;
+        String singleUserKey = "";
+        // 不需登录接口 无法获取用户名 改为IP限制
+        if (JwtUtil.isLogin()) {
+            singleUserKey = singleKey + ":" + JwtUtil.getUsername();
+        } else {
+            singleUserKey = singleKey + ":" + IpUtil.getIpAddress(request);
+        }
+        long value = redisTemplate.execute(limitScript, Arrays.asList(singleKey, singleUserKey));
+        if (Constant.LIMIT_EXCEED == value) {
+            throw new LimitException("您的访问频率过高,请稍后尝试");
         }
         return true;
     }
@@ -82,7 +76,7 @@ public class ApiLimitInterceptor implements HandlerInterceptor {
     }
 
     @Override
-    public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex)  {
+    public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) {
 
     }
 }

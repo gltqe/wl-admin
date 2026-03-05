@@ -28,7 +28,7 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
  **/
 
 @Configuration
-@ConditionalOnProperty(prefix = "cache",value = "type", havingValue = "redis")
+@ConditionalOnProperty(prefix = "cache", value = "type", havingValue = "redis")
 public class RedisConfig {
 
     @Resource
@@ -50,7 +50,7 @@ public class RedisConfig {
         objectMapper.activateDefaultTyping(LaissezFaireSubTypeValidator.instance, ObjectMapper.DefaultTyping.NON_FINAL, JsonTypeInfo.As.WRAPPER_ARRAY);
 
         // 使用Jackson2JsonRedisSerialize 替换默认序列化
-        Jackson2JsonRedisSerializer<Object> redisSerializer = new Jackson2JsonRedisSerializer<>(objectMapper,Object.class);
+        Jackson2JsonRedisSerializer<Object> redisSerializer = new Jackson2JsonRedisSerializer<>(objectMapper, Object.class);
 //        FastJsonRedisSerializer<Object> fastJsonRedisSerializer = new FastJsonRedisSerializer<>(Object.class);
 //       FastJson2JsonRedisSerializer<Object> redisSerializer = new FastJson2JsonRedisSerializer<>(Object.class);
 
@@ -96,12 +96,70 @@ public class RedisConfig {
     public DefaultRedisScript<Long> limitScript() {
         DefaultRedisScript<Long> defaultRedisScript = new DefaultRedisScript<>();
         // defaultRedisScript.setScriptSource(new ResourceScriptSource(new ClassPathResource("lua/iplimiter.lua")));
-        defaultRedisScript.setScriptText(limitScriptTextZSet());
+        defaultRedisScript.setScriptText(limitScriptSet());
         defaultRedisScript.setResultType(Long.class);
         return defaultRedisScript;
     }
 
+    /**
+     * 限流脚本
+     */
+//    private String limitScriptSet() {
+//        return "redis.replicate_commands();"+
+//                "local key = KEYS[1]"+
+//                "local limiterKey = KEYS[2]"+
+//                "local currentTimeMicro = redis.call('TIME')[1] .. redis.call('TIME')[2]"+
+//                "if redis.call('EXISTS',key)==1 then"+
+//                "    local size = tonumber(redis.call('hget',key,'size'))"+
+//                "    local timeSecond  = tonumber(redis.call('hget',key,'time'))"+
+//                "    local timeMicro  = tonumber(redis.call('hget',key,'timeMicro'))"+
+//                "    local currentLen  = redis.call('ZCARD',limiterKey)"+
+//                "    if  currentLen < size then"+
+//                "        redis.call('ZADD',limiterKey,currentTimeMicro,currentTimeMicro)"+
+//                "        redis.call('expire',limiterKey,timeSecond)"+
+//                "    else"+
+//                "        local effectiveTime = tonumber(currentTimeMicro) - tonumber(timeMicro)"+
+//                "        local effectiveNum = redis.call('ZCOUNT',limiterKey,effectiveTime,currentTimeMicro)"+
+//                "        if  effectiveNum < size and redis.call('ZREMRANGEBYSCORE',limiterKey,0,effectiveTime) > 0 then"+
+//                "            redis.call('ZADD',limiterKey,currentTimeMicro,currentTimeMicro)"+
+//                "            redis.call('expire',limiterKey,timeSecond)"+
+//                "        else"+
+//                "            return -1"+
+//                "        end"+
+//                "    end"+
+//                "end"+
+//                "return 0";
+//    }
 
+
+    private String limitScriptSet() {
+        return """
+            redis.replicate_commands();
+            local key = KEYS[1];
+            local limiterKey = KEYS[2];
+            local currentTimeMicro = redis.call('TIME')[1] .. redis.call('TIME')[2];
+            if redis.call('EXISTS', key) == 1 then
+                local size = tonumber(redis.call('hget', key, 'size'));
+                local timeSecond = tonumber(redis.call('hget', key, 'time'));
+                local timeMicro = tonumber(redis.call('hget', key, 'timeMicro'));
+                local currentLen = redis.call('ZCARD', limiterKey);
+                if currentLen < size then
+                    redis.call('ZADD', limiterKey, currentTimeMicro, currentTimeMicro);
+                    redis.call('expire', limiterKey, timeSecond);
+                else
+                    local effectiveTime = tonumber(currentTimeMicro) - tonumber(timeMicro);
+                    local effectiveNum = redis.call('ZCOUNT', limiterKey, effectiveTime, currentTimeMicro);
+                    if effectiveNum < size and redis.call('ZREMRANGEBYSCORE', limiterKey, 0, effectiveTime) > 0 then
+                        redis.call('ZADD', limiterKey, currentTimeMicro, currentTimeMicro);
+                        redis.call('expire', limiterKey, timeSecond);
+                    else
+                        return -1;
+                    end
+                end
+            end
+            return 0;
+            """;
+    }
     /**
      * 限流脚本
      */

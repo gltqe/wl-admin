@@ -135,15 +135,21 @@ public class Constant {
      * Interface key  接口配置key(全部用户) 保存时间的list的key
      */
     public static final String LIMIT_WHOLE_LIMITER_KEY = "limit:whole:limiter:";
+
+    /**
+     * Interface redis 返回code -1 接口超过访问限制
+     */
+    public static final long LIMIT_EXCEED = -1;
+
     /**
      * Interface redis 返回code -1 接口超过单个用户访问限制
      */
-    public static final long LIMIT_SINGLE_EXCEED = -1;
+//    public static final long LIMIT_SINGLE_EXCEED = -1;
 
     /**
      * Interface redis 返回code -1 接口超过限制
      */
-    public static final long LIMIT_WHOLE_EXCEED = -2;
+//    public static final long LIMIT_WHOLE_EXCEED = -2;
 
     /**
      * 接口limit在redis中默认超时时间

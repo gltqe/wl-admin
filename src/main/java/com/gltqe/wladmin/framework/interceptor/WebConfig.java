@@ -21,7 +21,10 @@ import java.util.Optional;
 public class WebConfig implements WebMvcConfigurer {
 
     @Resource
-    private Optional<ApiLimitInterceptor> apiLimitInterceptor;
+    private Optional<WholeApiLimitInterceptor> wholeApiLimitInterceptor;
+
+    @Resource
+    private Optional<SingleApiLimitInterceptor> singleApiLimitInterceptor;
 
     /**
      * 头像存储路径
@@ -31,8 +34,14 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
-        apiLimitInterceptor.ifPresent(apiLimitInterceptor -> {
-            registry.addInterceptor(apiLimitInterceptor).addPathPatterns("/**");
+        // 全局
+        wholeApiLimitInterceptor.ifPresent(wholeApiLimitInterceptor -> {
+            registry.addInterceptor(wholeApiLimitInterceptor).addPathPatterns("/**");
+        });
+
+        // 单个用户
+        singleApiLimitInterceptor.ifPresent(singleApiLimitInterceptor -> {
+            registry.addInterceptor(singleApiLimitInterceptor).addPathPatterns("/**");
         });
     }
 
