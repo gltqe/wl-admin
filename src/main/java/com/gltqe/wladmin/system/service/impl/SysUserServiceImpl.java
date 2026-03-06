@@ -380,18 +380,18 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
     @Override
     public void exportUser(SysUserDto sysUserDto, HttpServletResponse response) {
         List<SysUserVo> list = new ArrayList<>();
-        Integer exportType = sysUserDto.getExportType();
+        String exportType = sysUserDto.getExportType();
         if (ExportTypeEnum.CURRENT_PAGE.getCode().equals(exportType)) {
             IPage<SysUserVo> page = page(sysUserDto);
             list = page.getRecords();
-        } else if (ExportTypeEnum.QUERY_ALL.getCode().equals(exportType)) {
+        } else if (ExportTypeEnum.QUERY.getCode().equals(exportType)) {
             sysUserDto.setId(JwtUtil.getUserId());
             list = baseMapper.getList(sysUserDto);
         } else if (ExportTypeEnum.ALL.getCode().equals(exportType)) {
             sysUserDto = new SysUserDto();
             sysUserDto.setId(JwtUtil.getUserId());
             list = baseMapper.getList(sysUserDto);
-        } else if (ExportTypeEnum.SELECT_DATA.getCode().equals(exportType)) {
+        } else if (ExportTypeEnum.SELECT.getCode().equals(exportType)) {
             List<String> ids = sysUserDto.getIds();
             if (ids != null && !ids.isEmpty()) {
                 list = baseMapper.getListByIds(ids);

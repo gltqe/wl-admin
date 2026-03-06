@@ -16,19 +16,19 @@ import java.util.Map;
 @Getter
 public enum ExportTypeEnum {
 
-    CURRENT_PAGE(0, "当前分页"),
+    CURRENT_PAGE("current", "当前分页"),
 
-    QUERY_ALL(1, "当前查询（默认）"),
+    QUERY("query", "当前查询（默认）"),
 
-    ALL(2, "全部数据"),
+    ALL("all", "全部数据"),
 
-    SELECT_DATA(3, "勾选数据");
+    SELECT("select", "勾选数据");
 
-    private Integer code;
+    private String code;
     private String desc;
 
-    private static final Map<Integer, String> map;
-    private static final List<Integer> list;
+    private static final Map<String, String> map;
+    private static final List<String> list;
 
     static {
         map = new HashMap<>();
@@ -51,7 +51,7 @@ public enum ExportTypeEnum {
         return list.contains(code);
     }
 
-    ExportTypeEnum(Integer code, String desc) {
+    ExportTypeEnum(String code, String desc) {
         this.code = code;
         this.desc = desc;
     }

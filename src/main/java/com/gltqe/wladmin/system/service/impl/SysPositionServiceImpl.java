@@ -140,15 +140,15 @@ public class SysPositionServiceImpl extends ServiceImpl<SysPositionMapper, SysPo
     @Override
     public void exportPosition(SysPositionDto sysPositionDto, HttpServletResponse response) {
         List<SysPosition> list = new ArrayList<>();
-        Integer exportType = sysPositionDto.getExportType();
+        String exportType = sysPositionDto.getExportType();
         if (ExportTypeEnum.CURRENT_PAGE.getCode().equals(exportType)) {
             IPage<SysPosition> positionIPage = page(sysPositionDto);
             list= positionIPage.getRecords();
-        } else if (ExportTypeEnum.QUERY_ALL.getCode().equals(exportType)) {
+        } else if (ExportTypeEnum.QUERY.getCode().equals(exportType)) {
             list = list(getPageQuery(sysPositionDto));
         } else if (ExportTypeEnum.ALL.getCode().equals(exportType)) {
             list = list();
-        } else if (ExportTypeEnum.SELECT_DATA.getCode().equals(exportType)) {
+        } else if (ExportTypeEnum.SELECT.getCode().equals(exportType)) {
             List<String> ids = sysPositionDto.getIds();
             if (ids != null && !ids.isEmpty()) {
                 list = baseMapper.selectBatchIds(ids);
@@ -162,7 +162,7 @@ public class SysPositionServiceImpl extends ServiceImpl<SysPositionMapper, SysPo
             BeanUtils.copyProperties(sysPosition, sysPositionVo);
             voList.add(sysPositionVo);
         }
-        ExcelUtil.writeExcel(voList, "用户信息", "用户信息", response, SysPositionVo.class);
+        ExcelUtil.writeExcel(voList, "职位信息", "职位信息", response, SysPositionVo.class);
     }
 
     private LambdaQueryWrapper<SysPosition> getPageQuery(SysPositionDto sysPositionDto) {

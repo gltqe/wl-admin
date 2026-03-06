@@ -53,9 +53,9 @@ public class BaseDto<T> {
     private String endDateTime;
 
     /**
-     * 导出类型 0 当前分页 1 当前查询(默认) 2 全部数据 3 勾选数据
+     * 导出类型 current 当前分页 query 当前查询(默认) all 全部数据 select 勾选数据
      **/
-    private Integer exportType;
+    private String exportType;
 
     /**
      * 勾选数据的ID
@@ -106,11 +106,11 @@ public class BaseDto<T> {
         return page;
     }
 
-    public Integer getExportType() {
+    public String getExportType() {
         if (exportType != null) {
             return exportType;
         } else {
-            return ExportTypeEnum.QUERY_ALL.getCode();
+            return ExportTypeEnum.QUERY.getCode();
         }
     }
 }
