@@ -140,7 +140,7 @@ public class RedisConfig {
             local currentTimeMicro = redis.call('TIME')[1] .. redis.call('TIME')[2];
             if redis.call('EXISTS', key) == 1 then
                 local size = tonumber(redis.call('hget', key, 'size'));
-                local timeSecond = tonumber(redis.call('hget', key, 'time'));
+                local timeSecond = tonumber(redis.call('hget', key, 'timeSecond'));
                 local timeMicro = tonumber(redis.call('hget', key, 'timeMicro'));
                 local currentLen = redis.call('ZCARD', limiterKey);
                 if currentLen < size then
