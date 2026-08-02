@@ -15,6 +15,7 @@ import com.gltqe.wladmin.commons.exception.WlException;
 import com.gltqe.wladmin.commons.utils.EncryptUtil;
 import com.gltqe.wladmin.commons.utils.ExcelUtil;
 import com.gltqe.wladmin.commons.utils.JwtUtil;
+import com.gltqe.wladmin.framework.cache.CacheUtil;
 import com.gltqe.wladmin.system.entity.bo.UserDetailsBo;
 import com.gltqe.wladmin.system.entity.dto.PasswordDto;
 import com.gltqe.wladmin.system.entity.dto.SysUserDto;
@@ -32,7 +33,6 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -56,8 +56,6 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
 
     @Resource
     private SysUserMapper sysUserMapper;
-    @Resource
-    private RedisTemplate<String, Object> redisTemplate;
     @Resource
     private BCryptPasswordEncoder passwordEncoder;
     @Resource
@@ -107,12 +105,12 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
 
     private void refreshRedis(UserDetailsBo userDetail, SysUser sysUser) {
         String username = userDetail.getUsername();
-        Long expire = redisTemplate.getExpire(Constant.LOGIN_USER_KEY + username);
+        long expire = CacheUtil.getRemainExpire(Constant.LOGIN_USER_KEY + username);
         // 刷新部门id 用户状态
         userDetail.setDeptId(sysUser.getDeptId());
         userDetail.setStatus(sysUser.getStatus());
         authorityService.setRolePermission(userDetail);
-        redisTemplate.opsForValue().set(Constant.LOGIN_USER_KEY + username, userDetail, expire, TimeUnit.SECONDS);
+        CacheUtil.set(Constant.LOGIN_USER_KEY + username, userDetail, expire, TimeUnit.SECONDS);
     }
 
     /**
@@ -153,7 +151,7 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
         sysUserMapper.update(null, wrapper);
         SysUser sysUser = sysUserMapper.selectById(id);
         String username = sysUser.getUsername();
-        redisTemplate.delete(Constant.LOGIN_USER_KEY + username);
+        CacheUtil.delete(Constant.LOGIN_USER_KEY + username);
     }
 
     /**
@@ -419,7 +417,7 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
     private void handleLockUser(List<SysUserVo> sysUserVoList) {
         for (SysUserVo record : sysUserVoList) {
             String username = record.getUsername();
-            Object o = redisTemplate.opsForValue().get(Constant.LOGIN_LOCK + username);
+            Object o = CacheUtil.get(Constant.LOGIN_LOCK + username);
             if (Objects.nonNull(o)) {
                 record.setStatus(UserStatusEnum.LOCK.getCode());
             }

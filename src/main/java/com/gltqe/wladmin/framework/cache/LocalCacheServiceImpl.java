@@ -1,13 +1,11 @@
-package com.gltqe.wladmin.framework.cache.local;
+package com.gltqe.wladmin.framework.cache;
 
-import cn.hutool.extra.spring.SpringUtil;
 import com.gltqe.wladmin.commons.exception.WlException;
 import com.gltqe.wladmin.commons.utils.SpringContextUtil;
-import com.gltqe.wladmin.framework.cache.CacheProperties;
-import com.gltqe.wladmin.framework.cache.CacheService;
+import com.gltqe.wladmin.framework.cache.local.TimeCache;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.context.annotation.Configuration;
+import org.springframework.stereotype.Component;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -22,7 +20,7 @@ import java.util.concurrent.TimeUnit;
  * @date 2025/3/20 15:20
  */
 @Slf4j
-@Configuration
+@Component
 @ConditionalOnProperty(prefix = "cache", value = "type", havingValue = "local")
 public class LocalCacheServiceImpl implements CacheService {
 

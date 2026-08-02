@@ -6,6 +6,7 @@ import com.gltqe.wladmin.commons.common.Result;
 import com.gltqe.wladmin.commons.exception.LimitException;
 import com.gltqe.wladmin.commons.utils.IpUtil;
 import com.gltqe.wladmin.commons.utils.JwtUtil;
+import com.gltqe.wladmin.framework.cache.CacheUtil;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -13,7 +14,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.script.RedisScript;
 import org.springframework.web.servlet.HandlerInterceptor;
 import org.springframework.web.servlet.ModelAndView;
@@ -34,9 +34,6 @@ import java.util.Arrays;
 public class SingleApiLimitInterceptor implements HandlerInterceptor {
 
     @Resource
-    private RedisTemplate<String, Object> redisTemplate;
-
-    @Resource
     private RedisScript<Long> limitScript;
 
     @Value("${server.servlet.context-path}")
@@ -54,7 +51,7 @@ public class SingleApiLimitInterceptor implements HandlerInterceptor {
         } else {
             singleUserKey = singleKey + ":" + IpUtil.getIpAddress(request);
         }
-        long value = redisTemplate.execute(limitScript, Arrays.asList(singleKey, singleUserKey));
+        long value = CacheUtil.execute(limitScript, Arrays.asList(singleKey, singleUserKey));
         if (Constant.LIMIT_EXCEED == value) {
             throw new LimitException("您的访问频率过高,请稍后尝试");
         }

@@ -1,10 +1,9 @@
-package com.gltqe.wladmin.framework.cache.redis;
+package com.gltqe.wladmin.framework.cache;
 
-import com.gltqe.wladmin.framework.cache.CacheService;
 import jakarta.annotation.Resource;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.stereotype.Component;
 import org.springframework.data.redis.core.script.RedisScript;
 
 import java.util.Collection;
@@ -16,7 +15,7 @@ import java.util.concurrent.TimeUnit;
  * @author gltqe
  * @date 2025/3/21 17:29
  */
-@Configuration
+@Component
 @ConditionalOnProperty(prefix = "cache", value = "type", havingValue = "redis")
 public class RedisCacheServiceImpl implements CacheService {
 

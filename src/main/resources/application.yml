@@ -8,7 +8,7 @@ spring:
   application:
     name: wl
   profiles:
-    active: dev
+    active: local
   jackson:
     # 不返回null的字段
     default-property-inclusion: non_null

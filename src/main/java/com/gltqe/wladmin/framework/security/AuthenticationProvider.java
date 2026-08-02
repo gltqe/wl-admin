@@ -4,12 +4,12 @@ import com.gltqe.wladmin.commons.common.ConfigConstant;
 import com.gltqe.wladmin.commons.common.Constant;
 import com.gltqe.wladmin.commons.enums.UserStatusEnum;
 import com.gltqe.wladmin.commons.exception.LoginException;
+import com.gltqe.wladmin.framework.cache.CacheUtil;
 import com.gltqe.wladmin.system.entity.bo.UserDetailsBo;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
@@ -35,9 +35,6 @@ public class AuthenticationProvider implements org.springframework.security.auth
 
     @Resource
     private PasswordEncoder passwordEncoder;
-
-    @Resource
-    private StringRedisTemplate stringRedisTemplate;
 
 
     @Override
@@ -84,33 +81,33 @@ public class AuthenticationProvider implements org.springframework.security.auth
             lockUser(username);
             throw new LoginException("用户名或密码错误!");
         } else {
-            stringRedisTemplate.delete(Constant.ERROR_TIMES + username);
+            CacheUtil.delete(Constant.ERROR_TIMES + username);
         }
     }
 
     private void checkLock(UserDetailsBo userDetail, String usernameForm) {
         String username = userDetail.getUsername();
-        String cacheLock = stringRedisTemplate.opsForValue().get(Constant.LOGIN_LOCK + username);
+        String cacheLock = CacheUtil.get(Constant.LOGIN_LOCK + username, String.class);
         if (usernameForm.equals(cacheLock)) {
             throw new LoginException("当前用户[" + usernameForm + "]已被锁定,请稍后再试");
         }
     }
 
     private void lockUser(String username) {
-        String errorTimesLimit = stringRedisTemplate.opsForValue().get(ConfigConstant.ERROR_TIMES_LIMIT);
+        String errorTimesLimit = CacheUtil.get(ConfigConstant.ERROR_TIMES_LIMIT, String.class);
         if (StringUtils.isNotBlank(errorTimesLimit) && Long.parseLong(errorTimesLimit) > 0) {
             // 增加错误次数
-            Long increment = stringRedisTemplate.opsForValue().increment(Constant.ERROR_TIMES + username);
+            Long increment = CacheUtil.increment(Constant.ERROR_TIMES + username);
             long num = Long.parseLong(errorTimesLimit);
             if (num > 0 && increment >= num) {
                 // 锁定用户时间
-                String time = stringRedisTemplate.opsForValue().get(ConfigConstant.LOGIN_LOCK_TIME);
+                String time = CacheUtil.get(ConfigConstant.LOGIN_LOCK_TIME, String.class);
                 if (StringUtils.isNotBlank(time)) {
                     long timeLong = Long.parseLong(time);
                     if (timeLong != 0) {
                         // 锁定用户
-                        stringRedisTemplate.opsForValue().set(Constant.LOGIN_LOCK + username, username, timeLong, TimeUnit.MINUTES);
-                        stringRedisTemplate.delete(Constant.ERROR_TIMES + username);
+                        CacheUtil.set(Constant.LOGIN_LOCK + username, username, timeLong, TimeUnit.MINUTES);
+                        CacheUtil.delete(Constant.ERROR_TIMES + username);
                     }
                 }
             }

@@ -9,6 +9,7 @@ import com.gltqe.wladmin.commons.common.Constant;
 import com.gltqe.wladmin.commons.enums.TimeUnitEnum;
 import com.gltqe.wladmin.commons.exception.WlException;
 import com.gltqe.wladmin.commons.utils.TimeUnitUtil;
+import com.gltqe.wladmin.framework.cache.CacheUtil;
 import com.gltqe.wladmin.system.entity.po.SysApiLimit;
 import com.gltqe.wladmin.system.entity.dto.SysApiLimitDto;
 import com.gltqe.wladmin.system.mapper.SysApiLimitMapper;
@@ -16,9 +17,6 @@ import com.gltqe.wladmin.system.service.SysApiLimitService;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.data.redis.core.BoundHashOperations;
-import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.redis.core.SetOperations;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -39,8 +37,6 @@ public class SysApiLimitServiceImpl extends ServiceImpl<SysApiLimitMapper, SysAp
 
     @Resource
     private SysApiLimitMapper sysApiLimitMapper;
-    @Resource
-    private RedisTemplate<String, String> redisTemplate;
 
     /**
      * 加载核心配置到内存
@@ -50,11 +46,11 @@ public class SysApiLimitServiceImpl extends ServiceImpl<SysApiLimitMapper, SysAp
      **/
     @Override
     public void loadApiLimit() {
-        redisTemplate.delete(Constant.LIMIT_URL_KEY);
-        Set<String> wholeKeys = redisTemplate.keys(Constant.LIMIT_WHOLE_KEY + "*");
-        Set<String> singleKeys = redisTemplate.keys(Constant.LIMIT_SINGLE_KEY + "*");
+        CacheUtil.delete(Constant.LIMIT_URL_KEY);
+        Set<String> wholeKeys = CacheUtil.keys(Constant.LIMIT_WHOLE_KEY + "*");
+        Set<String> singleKeys = CacheUtil.keys(Constant.LIMIT_SINGLE_KEY + "*");
         Collection<String> union = CollUtil.union(wholeKeys, singleKeys);
-        redisTemplate.delete(union);
+        CacheUtil.delete(union);
         LambdaQueryWrapper<SysApiLimit> wrapper = new LambdaQueryWrapper<>();
         wrapper.select(SysApiLimit::getName,
                 SysApiLimit::getUri,
@@ -213,40 +209,37 @@ public class SysApiLimitServiceImpl extends ServiceImpl<SysApiLimitMapper, SysAp
     public void initApiLimit(SysApiLimit sysApiLimit) {
         String uri = sysApiLimit.getUri();
         cleanApiLimit(uri);
-        redisTemplate.opsForSet().add(Constant.LIMIT_URL_KEY, uri);
+        CacheUtil.setAdd(Constant.LIMIT_URL_KEY, uri);
         String singleLimiterRate = sysApiLimit.getSingleLimiterRate();
         Long singleTimeSecond = sysApiLimit.getSingleTimeSecond();
         String wholeLimiterRate = sysApiLimit.getWholeLimiterRate();
         boolean single = StringUtils.isNotBlank(singleLimiterRate) && singleTimeSecond != null && singleTimeSecond > 0;
         if (single) {
             String singleKey = Constant.LIMIT_SINGLE_KEY + uri;
-            BoundHashOperations<String, String, Object> hashOps = redisTemplate.boundHashOps(singleKey);
-            hashOps.put("size", sysApiLimit.getSingleFrequency());
-            hashOps.put("timeSecond", singleTimeSecond);
+            CacheUtil.hashPut(singleKey, "size", sysApiLimit.getSingleFrequency());
+            CacheUtil.hashPut(singleKey, "timeSecond", singleTimeSecond);
             // 提前计算微秒，每次存入zset的值为微秒
-            hashOps.put("timeMicro", TimeUnitUtil.convert(new BigDecimal(singleTimeSecond), TimeUnitUtil.SECOND, TimeUnitUtil.MICROSECOND, 0).longValue());
+            CacheUtil.hashPut(singleKey, "timeMicro", TimeUnitUtil.convert(new BigDecimal(singleTimeSecond), TimeUnitUtil.SECOND, TimeUnitUtil.MICROSECOND, 0).longValue());
         }
         boolean whole = StringUtils.isNotBlank(wholeLimiterRate);
         if (whole) {
             String wholeKey = Constant.LIMIT_WHOLE_KEY + uri;
-            BoundHashOperations<String, String, Object> hashOps = redisTemplate.boundHashOps(wholeKey);
-            hashOps.put("size", sysApiLimit.getWholeFrequency());
-            hashOps.put("timeSecond", sysApiLimit.getWholeTimeSecond());
-            hashOps.put("timeMicro", TimeUnitUtil.convert(new BigDecimal(sysApiLimit.getWholeTimeSecond()), TimeUnitUtil.SECOND, TimeUnitUtil.MICROSECOND, 0).longValue());
+            CacheUtil.hashPut(wholeKey, "size", sysApiLimit.getWholeFrequency());
+            CacheUtil.hashPut(wholeKey, "timeSecond", sysApiLimit.getWholeTimeSecond());
+            CacheUtil.hashPut(wholeKey, "timeMicro", TimeUnitUtil.convert(new BigDecimal(sysApiLimit.getWholeTimeSecond()), TimeUnitUtil.SECOND, TimeUnitUtil.MICROSECOND, 0).longValue());
         }
     }
 
     public void cleanApiLimit(String uri) {
-        SetOperations<String, String> setOperations = redisTemplate.opsForSet();
-        setOperations.remove(Constant.LIMIT_URL_KEY, uri);
+        CacheUtil.setRemove(Constant.LIMIT_URL_KEY, uri);
         String singleKey = Constant.LIMIT_SINGLE_KEY + uri;
         String wholeKey = Constant.LIMIT_WHOLE_KEY + uri;
         String wholeLimiterKey = Constant.LIMIT_WHOLE_LIMITER_KEY + uri;
-        redisTemplate.delete(singleKey);
-        redisTemplate.delete(wholeKey);
-        redisTemplate.delete(wholeLimiterKey);
-        Set<String> keys = redisTemplate.keys(singleKey + ":*");
-        redisTemplate.delete(keys);
+        CacheUtil.delete(singleKey);
+        CacheUtil.delete(wholeKey);
+        CacheUtil.delete(wholeLimiterKey);
+        Set<String> keys = CacheUtil.keys(singleKey + ":*");
+        CacheUtil.delete(keys);
     }
 
 

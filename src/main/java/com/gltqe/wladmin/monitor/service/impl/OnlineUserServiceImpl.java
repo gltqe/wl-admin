@@ -11,11 +11,11 @@ import com.gltqe.wladmin.monitor.service.OnlineUserService;
 import com.gltqe.wladmin.system.entity.po.SysDept;
 import com.gltqe.wladmin.system.entity.po.SysUser;
 import com.gltqe.wladmin.system.entity.bo.UserDetailsBo;
+import com.gltqe.wladmin.framework.cache.CacheUtil;
 import com.gltqe.wladmin.system.mapper.SysDeptMapper;
 import com.gltqe.wladmin.system.mapper.SysUserMapper;
 import jakarta.annotation.Resource;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -23,15 +23,13 @@ import java.util.*;
 @Service
 public class OnlineUserServiceImpl implements OnlineUserService {
     @Resource
-    private RedisTemplate redisTemplate;
-    @Resource
     private SysUserMapper sysUserMapper;
     @Resource
     private SysDeptMapper sysDeptMapper;
 
     @Override
     public IPage<OnlineUserVo> page(OnlineUserDto onlineUserDto) {
-        Set keys = redisTemplate.keys(Constant.LOGIN_USER_KEY + "*");
+        Set<String> keys = CacheUtil.keys(Constant.LOGIN_USER_KEY + "*");
         // 当前在线总人数
         int size = keys.size();
         String userId = onlineUserDto.getUserId();
@@ -49,11 +47,11 @@ public class OnlineUserServiceImpl implements OnlineUserService {
         }
 
         TreeMap<Long, UserDetailsBo> treeMap = new TreeMap<>(Comparator.reverseOrder());
-        for (Object key : keys) {
+        for (String key : keys) {
             boolean flag = true;
-            Object object = redisTemplate.opsForValue().get(key);
+            Object object = CacheUtil.get(key);
             UserDetailsBo o = JSONObject.parseObject(JSONObject.toJSONString(object), UserDetailsBo.class);
-            Long expire = redisTemplate.getExpire(key);
+            long expire = CacheUtil.getRemainExpire(key);
 
             if (StringUtils.isNotBlank(onlineUserDto.getUsername()) && !o.getUsername().contains(onlineUserDto.getUsername())) {
                 flag = false;
@@ -123,7 +121,7 @@ public class OnlineUserServiceImpl implements OnlineUserService {
     @Override
     public void exit(OnlineUserDto onlineUserVo) {
         String username = onlineUserVo.getUsername();
-        redisTemplate.delete(Constant.LOGIN_USER_KEY + username);
+        CacheUtil.delete(Constant.LOGIN_USER_KEY + username);
     }
 
 

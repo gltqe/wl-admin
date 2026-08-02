@@ -4,11 +4,10 @@ import com.gltqe.wladmin.commons.common.Constant;
 import com.gltqe.wladmin.commons.exception.TokenErrorException;
 import com.gltqe.wladmin.commons.exception.TokenExpireException;
 import com.gltqe.wladmin.commons.utils.JwtUtil;
+import com.gltqe.wladmin.framework.cache.CacheUtil;
 import com.gltqe.wladmin.system.entity.bo.UserDetailsBo;
-import jakarta.annotation.Resource;
 import lombok.Data;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.data.redis.core.RedisTemplate;
 
 import java.util.Objects;
 
@@ -19,9 +18,6 @@ import java.util.Objects;
 @Configuration
 public class TokenService {
 
-
-    @Resource
-    private RedisTemplate<String,Object> redisTemplate;
 
     public TokenUserDetails getSysUserDetails(String token){
         // 从jwt中获取username id
@@ -39,7 +35,7 @@ public class TokenService {
         }
 
         // 查询redis中是否有该用户
-        Object o = redisTemplate.opsForValue().get(Constant.LOGIN_USER_KEY + JwtUtil.getUsernameByToken(token));
+        Object o = CacheUtil.get(Constant.LOGIN_USER_KEY + JwtUtil.getUsernameByToken(token));
         if (Objects.isNull(o)) {
             tokenUserDetails.setRuntimeException(new TokenErrorException("已被强制退出,请重新登录"));
             return tokenUserDetails;

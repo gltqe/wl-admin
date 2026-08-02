@@ -10,6 +10,7 @@ import com.gltqe.wladmin.commons.exception.TokenErrorException;
 import com.gltqe.wladmin.commons.exception.WlException;
 import com.gltqe.wladmin.commons.utils.IpUtil;
 import com.gltqe.wladmin.commons.utils.JwtUtil;
+import com.gltqe.wladmin.framework.cache.CacheUtil;
 import com.gltqe.wladmin.monitor.entity.po.LogLogin;
 import com.gltqe.wladmin.monitor.mapper.LoginLogMapper;
 import com.gltqe.wladmin.system.entity.bo.UserDetailsBo;
@@ -24,7 +25,6 @@ import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -51,9 +51,6 @@ public class LoginServiceImpl implements LoginService {
     private LoginLogMapper loginLogMapper;
 
     @Resource
-    private RedisTemplate<String, Object> redisTemplate;
-
-    @Resource
     private AuthorityService authorityService;
 
     @Value("${token.access-ttl:3600}")
@@ -70,7 +67,7 @@ public class LoginServiceImpl implements LoginService {
         // 验证码
         CaptchaVo captchaDto = new CaptchaVo();
         // 获取配置 判断是否需要验证码
-        Object hasCaptchaObject = redisTemplate.opsForValue().get(ConfigConstant.HAS_CAPTCHA);
+        Object hasCaptchaObject = CacheUtil.get(ConfigConstant.HAS_CAPTCHA);
         if (ObjectUtil.isNotNull(hasCaptchaObject)) {
             Boolean hasCaptcha = Boolean.parseBoolean(String.valueOf(hasCaptchaObject));
             captchaDto.setHasCaptcha(hasCaptcha);
@@ -88,7 +85,7 @@ public class LoginServiceImpl implements LoginService {
             String text = lineCaptcha.getCode();
             String imageBase64Data = lineCaptcha.getImageBase64Data();
             captchaDto.setCaptchaValue(imageBase64Data);
-            redisTemplate.opsForValue().set(Constant.CAPTCHA_KEY + captchaKey, text, 300L, TimeUnit.SECONDS);
+            CacheUtil.set(Constant.CAPTCHA_KEY + captchaKey, text, 300L, TimeUnit.SECONDS);
             return captchaDto;
         } catch (Exception e) {
             log.error("获取验证码异常:", e);
@@ -133,7 +130,7 @@ public class LoginServiceImpl implements LoginService {
 
         //存入redis
         setLoginInfo(principal, request);
-        redisTemplate.opsForValue().set(Constant.LOGIN_USER_KEY + principalUsername, principal, accessTtl, TimeUnit.SECONDS);
+        CacheUtil.set(Constant.LOGIN_USER_KEY + principalUsername, principal, accessTtl, TimeUnit.SECONDS);
         // 登录日志
         recordLog(principal, request);
         // 响应结果
@@ -145,7 +142,7 @@ public class LoginServiceImpl implements LoginService {
 
     public void verCaptcha(String captchaKey, String captchaValue) {
         // 获取配置 判断是否需要验证码
-        Object hasCaptchaObject = redisTemplate.opsForValue().get(ConfigConstant.HAS_CAPTCHA);
+        Object hasCaptchaObject = CacheUtil.get(ConfigConstant.HAS_CAPTCHA);
         if (Objects.nonNull(hasCaptchaObject)) {
             Boolean hasCaptcha = Boolean.valueOf(String.valueOf(hasCaptchaObject));
             if (!hasCaptcha) {
@@ -153,8 +150,8 @@ public class LoginServiceImpl implements LoginService {
             }
         }
         String key = Constant.CAPTCHA_KEY + captchaKey;
-        Object o = redisTemplate.opsForValue().get(key);
-        redisTemplate.delete(key);
+        Object o = CacheUtil.get(key);
+        CacheUtil.delete(key);
         if (Objects.nonNull(o)) {
             String s = String.valueOf(o);
             if (!s.equalsIgnoreCase(captchaValue)) {
@@ -193,7 +190,7 @@ public class LoginServiceImpl implements LoginService {
                 Integer tokenType = JwtUtil.getTokenType(refreshToken);
                 if (Constant.TOKEN_TYPE_REFRESH.equals(tokenType)) {
                     String username = JwtUtil.getUsernameByToken(refreshToken);
-                    Boolean refresh = redisTemplate.opsForValue().setIfAbsent(Constant.TOKEN_REFRESH_SPACE_KEY + username, 1, refreshSpace, TimeUnit.SECONDS);
+                    Boolean refresh = CacheUtil.setIfAbsent(Constant.TOKEN_REFRESH_SPACE_KEY + username, 1, refreshSpace, TimeUnit.SECONDS);
                     if (Boolean.TRUE.equals(refresh)) {
                         UserDetailsBo userDetail = (UserDetailsBo) userDetailsService.loadUserByUsername(username);
                         authorityService.setRolePermission(userDetail);
@@ -205,7 +202,7 @@ public class LoginServiceImpl implements LoginService {
                         String accessToken = JwtUtil.createToken(map, accessTtl);
                         //存入redis
                         setLoginInfo(userDetail, request);
-                        redisTemplate.opsForValue().set(Constant.LOGIN_USER_KEY + username, userDetail, accessTtl, TimeUnit.SECONDS);
+                        CacheUtil.set(Constant.LOGIN_USER_KEY + username, userDetail, accessTtl, TimeUnit.SECONDS);
                         return accessToken;
                     } else {
                         throw new TokenErrorException("刷新频率过高,请重新登录");

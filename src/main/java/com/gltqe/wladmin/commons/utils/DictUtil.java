@@ -2,10 +2,10 @@ package com.gltqe.wladmin.commons.utils;
 
 import com.alibaba.fastjson2.JSONObject;
 import com.gltqe.wladmin.commons.common.DictConstant;
+import com.gltqe.wladmin.framework.cache.CacheUtil;
 import com.gltqe.wladmin.framework.excel.Dict;
 import com.gltqe.wladmin.system.entity.po.SysDictItem;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.data.redis.core.RedisTemplate;
 
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -17,8 +17,6 @@ import java.util.concurrent.TimeUnit;
 @SuppressWarnings("unchecked")
 public class DictUtil {
 
-
-    private static final RedisTemplate<String, Object> REDIS = SpringContextUtil.getBean("redisTemplate",RedisTemplate.class);
 
     /**
      * 默认map是否缓存
@@ -89,7 +87,7 @@ public class DictUtil {
         } else {
             mapKey = DictConstant.DICT_MAP_KEY + dictCode;
         }
-        Object o = REDIS.opsForValue().get(mapKey);
+        Object o = CacheUtil.get(mapKey);
         if (o instanceof Map) {
             return (Map<String,String> )o;
         }
@@ -106,7 +104,7 @@ public class DictUtil {
         }
 
         if (cache && timeout > 0) {
-            REDIS.opsForValue().set(mapKey, entries, timeout, TimeUnit.SECONDS);
+            CacheUtil.set(mapKey, entries, timeout, TimeUnit.SECONDS);
         }
         return entries;
     }
@@ -121,7 +119,7 @@ public class DictUtil {
             } else {
                 expKey = DictConstant.DICT_EXP_KEY + dictExp.hashCode();
             }
-            Object o = REDIS.opsForValue().get(expKey);
+            Object o = CacheUtil.get(expKey);
             if (o instanceof Map) {
                 map = (Map<String,String> )o;
             }
@@ -138,29 +136,29 @@ public class DictUtil {
                 }
             }
             if (!map.isEmpty() && cache && timeout > 0) {
-                REDIS.opsForValue().set(expKey, map, timeout, TimeUnit.SECONDS);
+                CacheUtil.set(expKey, map, timeout, TimeUnit.SECONDS);
             }
         }
         return map;
     }
 
     public static void removeAllCache() {
-        Set<String> keys = REDIS.keys(DictConstant.DICT_KEY + "*");
+        Set<String> keys = CacheUtil.keys(DictConstant.DICT_KEY + "*");
         if (keys != null && !keys.isEmpty()) {
-            REDIS.delete(keys);
+            CacheUtil.delete(keys);
         }
     }
 
     public static void addCache(String dictCode, List<SysDictItem> sysDictItemList) {
-        REDIS.opsForValue().set(DictConstant.DICT_KEY + dictCode, sysDictItemList);
+        CacheUtil.set(DictConstant.DICT_KEY + dictCode, sysDictItemList);
     }
 
     public static void removeCache(String dictCode) {
-        REDIS.delete(DictConstant.DICT_KEY + dictCode);
+        CacheUtil.delete(DictConstant.DICT_KEY + dictCode);
     }
 
     public static List<SysDictItem> getCache(String dictCode) {
-        Object o = REDIS.opsForValue().get(DictConstant.DICT_KEY + dictCode);
+        Object o = CacheUtil.get(DictConstant.DICT_KEY + dictCode);
         List<SysDictItem> sysDictItemList = new ArrayList<>();
         if (o instanceof List<?>) {
             sysDictItemList =(List<SysDictItem>) o;

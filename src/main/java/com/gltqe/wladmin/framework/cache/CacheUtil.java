@@ -1,7 +1,6 @@
 package com.gltqe.wladmin.framework.cache;
 
 import cn.hutool.extra.spring.SpringUtil;
-import com.alibaba.fastjson2.JSONObject;
 import org.springframework.data.redis.core.script.RedisScript;
 
 import java.util.Collection;
@@ -38,6 +37,17 @@ public class CacheUtil {
     }
 
     /**
+     * 设置缓存键值对、缓存时间、时间单位
+     * @param key
+     * @param value
+     * @param ttl
+     * @param timeUnit
+     */
+    public static void set(String key, Object value, long ttl, TimeUnit timeUnit) {
+        cacheService.set(key, value, ttl, timeUnit);
+    }
+
+    /**
      * 获取缓存值
      * @param key
      */
@@ -53,11 +63,8 @@ public class CacheUtil {
      */
     public static <T> T get(String key, Class<T> tClass) {
         Object o = get(key);
-        if (o == null) {
-            return null;
-        } else {
-            return JSONObject.parseObject(JSONObject.toJSONString(o), tClass);
-        }
+        // null或类型一致正常返回; 类型不一致抛ClassCastException暴露问题
+        return tClass.cast(o);
     }
 
     /**

@@ -6,6 +6,7 @@ import com.gltqe.wladmin.commons.common.Result;
 import com.gltqe.wladmin.commons.exception.LimitException;
 import com.gltqe.wladmin.commons.utils.IpUtil;
 import com.gltqe.wladmin.commons.utils.JwtUtil;
+import com.gltqe.wladmin.framework.cache.CacheUtil;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -13,7 +14,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.script.RedisScript;
 import org.springframework.web.servlet.HandlerInterceptor;
 import org.springframework.web.servlet.ModelAndView;
@@ -34,9 +34,6 @@ import java.util.Arrays;
 public class WholeApiLimitInterceptor implements HandlerInterceptor {
 
     @Resource
-    private RedisTemplate<String, Object> redisTemplate;
-
-    @Resource
     private RedisScript<Long> limitScript;
 
 
@@ -50,7 +47,7 @@ public class WholeApiLimitInterceptor implements HandlerInterceptor {
         String wholeKey = Constant.LIMIT_WHOLE_KEY + uri;
         String wholeLimiterKey = Constant.LIMIT_WHOLE_LIMITER_KEY + uri;
         // 不需登录接口 无法获取用户名 改为IP限制
-        long value = redisTemplate.execute(limitScript, Arrays.asList(wholeKey, wholeLimiterKey));
+        long value = CacheUtil.execute(limitScript, Arrays.asList(wholeKey, wholeLimiterKey));
         if (Constant.LIMIT_EXCEED == value) {
             throw new LimitException("当前接口访问频率过高,请稍后尝试");
         }

@@ -1,8 +1,8 @@
 package com.gltqe.wladmin.commons.utils;
 
 import com.gltqe.wladmin.commons.common.ConfigConstant;
+import com.gltqe.wladmin.framework.cache.CacheUtil;
 import com.gltqe.wladmin.system.entity.po.SysConfig;
-import org.springframework.data.redis.core.StringRedisTemplate;
 
 import java.util.Set;
 
@@ -12,12 +12,10 @@ import java.util.Set;
  */
 public class ConfigUtil {
 
-    private static final StringRedisTemplate REDIS = SpringContextUtil.getBean(StringRedisTemplate.class);
-
     public static void removeAllCache() {
-        Set<String> keys = REDIS.keys(ConfigConstant.CONFIG_KEY + "*");
+        Set<String> keys = CacheUtil.keys(ConfigConstant.CONFIG_KEY + "*");
         if (keys != null && !keys.isEmpty()) {
-            REDIS.delete(keys);
+            CacheUtil.delete(keys);
         }
     }
 
@@ -28,14 +26,14 @@ public class ConfigUtil {
     }
 
     public static void addCache(String configCode, String configValue) {
-        REDIS.opsForValue().set(ConfigConstant.CONFIG_KEY + configCode, configValue);
+        CacheUtil.set(ConfigConstant.CONFIG_KEY + configCode, configValue);
     }
 
     public static void removeCache(String configCode) {
-        REDIS.delete(ConfigConstant.CONFIG_KEY + configCode);
+        CacheUtil.delete(ConfigConstant.CONFIG_KEY + configCode);
     }
 
     public static String getCache(String configCode) {
-        return REDIS.opsForValue().get(ConfigConstant.CONFIG_KEY + configCode);
+        return CacheUtil.get(ConfigConstant.CONFIG_KEY + configCode, String.class);
     }
 }

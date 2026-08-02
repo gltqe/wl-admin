@@ -11,7 +11,7 @@ import org.springframework.data.redis.core.script.RedisScript;
  * @author gltqe
  * @date 2025/3/20 15:16
  */
-public interface CacheService {
+interface CacheService {
 
     /**
      * 设置缓存键值对
