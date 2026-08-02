@@ -19,7 +19,7 @@ public class CacheProperties {
     private String type;
 
     /**
-     * local默认过期时间 -1:永不过期
+     * local默认过期时间(秒) -1:永不过期
      */
     private long localDefaultTtl;
 

@@ -1,12 +1,14 @@
 package com.gltqe.wladmin.framework.cache.redis;
 
-import cn.hutool.json.JSONUtil;
 import com.gltqe.wladmin.framework.cache.CacheService;
 import jakarta.annotation.Resource;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.script.RedisScript;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -28,7 +30,7 @@ public class RedisCacheServiceImpl implements CacheService {
      */
     @Override
     public void set(String key, Object value) {
-        redisTemplate.opsForValue().set(key, value.toString());
+        redisTemplate.opsForValue().set(key, value);
     }
 
     /**
@@ -39,7 +41,7 @@ public class RedisCacheServiceImpl implements CacheService {
      */
     @Override
     public void set(String key, Object value, long ttl) {
-        redisTemplate.opsForValue().set(key, JSONUtil.toJsonStr(value), ttl);
+        redisTemplate.opsForValue().set(key, value, ttl);
     }
 
     /**
@@ -107,6 +109,15 @@ public class RedisCacheServiceImpl implements CacheService {
     }
 
     /**
+     * 批量删除
+     * @param keys
+     */
+    @Override
+    public void delete(Collection<String> keys) {
+        redisTemplate.delete(keys);
+    }
+
+    /**
      * 获取所有符合条件的key（本地缓存只支持 * ）
      * @param key
      * @return
@@ -160,4 +171,70 @@ public class RedisCacheServiceImpl implements CacheService {
     public void hashPut(String key, String hashKey, Object value) {
         redisTemplate.boundHashOps(key).put(hashKey, value);
     }
+
+    /**
+     * hash get方法
+     * @param key
+     * @param hashKey
+     * @return
+     */
+    @Override
+    public Object hashGet(String key, String hashKey) {
+        return redisTemplate.opsForHash().get(key, hashKey);
+    }
+
+    /**
+     * 自增 每次加1
+     * @param key
+     * @return
+     */
+    @Override
+    public Long increment(String key) {
+        return redisTemplate.opsForValue().increment(key);
+    }
+
+    /**
+     * 自增
+     * @param key
+     * @param delta
+     * @return
+     */
+    @Override
+    public Long increment(String key, long delta) {
+        return redisTemplate.opsForValue().increment(key, delta);
+    }
+
+    /**
+     * 执行redis脚本
+     * @param script
+     * @param keys
+     * @param args
+     * @return
+     */
+    @Override
+    public <T> T execute(RedisScript<T> script, List<String> keys, Object... args) {
+        return redisTemplate.execute(script, keys, args);
+    }
+
+    /**
+     * set add方法
+     * @param key
+     * @param values
+     */
+    @Override
+    public void setAdd(String key, Object... values) {
+        redisTemplate.opsForSet().add(key, values);
+    }
+
+    /**
+     * set remove方法
+     * @param key
+     * @param values
+     */
+    @Override
+    public void setRemove(String key, Object... values) {
+        redisTemplate.opsForSet().remove(key, values);
+    }
+
+
 }

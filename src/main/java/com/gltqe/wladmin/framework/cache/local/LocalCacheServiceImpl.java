@@ -9,7 +9,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Configuration;
 
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -107,7 +110,18 @@ public class LocalCacheServiceImpl implements CacheService {
      */
     @Override
     public void delete(String key) {
-        CacheService.super.delete(key);
+        TIMED_CACHE.remove(key);
+    }
+
+    /**
+     * 批量删除
+     * @param keys
+     */
+    @Override
+    public void delete(Collection<String> keys) {
+        for (String key : keys) {
+            TIMED_CACHE.remove(key);
+        }
     }
 
     /**
@@ -151,14 +165,7 @@ public class LocalCacheServiceImpl implements CacheService {
      */
     @Override
     public boolean setIfAbsent(String key, Object value, long ttl, TimeUnit timeUnit) {
-        if (TIMED_CACHE.containsKey(key)) {
-            return false;
-        } else {
-            // 转换秒
-            long seconds = timeUnit.toSeconds(ttl);
-            TIMED_CACHE.put(key, value, seconds);
-            return true;
-        }
+        return TIMED_CACHE.setIfAbsent(key, value, timeUnit.toSeconds(ttl));
     }
 
     @Override
@@ -178,4 +185,85 @@ public class LocalCacheServiceImpl implements CacheService {
             TIMED_CACHE.put(key, hashMap);
         }
     }
+
+    /**
+     * hash get方法
+     * @param key
+     * @param hashKey
+     * @return
+     */
+    @Override
+    public Object hashGet(String key, String hashKey) {
+        Object o = TIMED_CACHE.get(key);
+        if (o instanceof Map) {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> hashMap = (Map<String, Object>) o;
+            return hashMap.get(hashKey);
+        }
+        return null;
+    }
+
+    /**
+     * 自增 每次加1
+     * @param key
+     * @return
+     */
+    @Override
+    public Long increment(String key) {
+        return TIMED_CACHE.increment(key, 1);
+    }
+
+    /**
+     * 自增
+     * @param key
+     * @param delta
+     * @return
+     */
+    @Override
+    public Long increment(String key, long delta) {
+        return TIMED_CACHE.increment(key, delta);
+    }
+
+    /**
+     * set add方法
+     * @param key
+     * @param values
+     */
+    @Override
+    public void setAdd(String key, Object... values) {
+        if (TIMED_CACHE.containsKey(key)) {
+            Object o = TIMED_CACHE.get(key);
+            if (o instanceof Set) {
+                @SuppressWarnings("unchecked")
+                Set<Object> set = (Set<Object>) o;
+                set.addAll(Arrays.asList(values));
+            } else {
+                throw new WlException("缓存类型异常，请检查后重试");
+            }
+        } else {
+            Set<Object> set = new HashSet<>(Arrays.asList(values));
+            TIMED_CACHE.put(key, set);
+        }
+    }
+
+    /**
+     * set remove方法
+     * @param key
+     * @param values
+     */
+    @Override
+    public void setRemove(String key, Object... values) {
+        if (TIMED_CACHE.containsKey(key)) {
+            Object o = TIMED_CACHE.get(key);
+            if (o instanceof Set) {
+                @SuppressWarnings("unchecked")
+                Set<Object> set = (Set<Object>) o;
+                Arrays.asList(values).forEach(set::remove);
+            } else {
+                throw new WlException("缓存类型异常，请检查后重试");
+            }
+        }
+    }
+
+
 }

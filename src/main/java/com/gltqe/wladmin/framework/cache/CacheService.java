@@ -1,7 +1,11 @@
 package com.gltqe.wladmin.framework.cache;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+
+import org.springframework.data.redis.core.script.RedisScript;
 
 /**
  * @author gltqe
@@ -86,7 +90,15 @@ public interface CacheService {
     }
 
     /**
-     * 获取所有符合条件的key（本地缓存只支持 * ）
+     * 批量删除
+     * @param keys
+     */
+    default void delete(Collection<String> keys) {
+        throw new RuntimeException("未实现[delete]方法");
+    }
+
+    /**
+     * 获取所有符合条件的key（本地缓存支持 * ? 等通配符）
      * @param key
      * @return
      */
@@ -136,12 +148,64 @@ public interface CacheService {
         throw new RuntimeException("未实现[hashPut]方法");
     }
 
-//    /**
-//     * set add方法
-//     * @param key
-//     * @param values
-//     */
-//    default void setAdd(String key, Object... values) {
-//
-//    }
+    /**
+     * hash get方法
+     * @param key
+     * @param hashKey
+     * @return
+     */
+    default Object hashGet(String key, String hashKey) {
+        throw new RuntimeException("未实现[hashGet]方法");
+    }
+
+    /**
+     * 自增 每次加1
+     * @param key
+     * @return 自增后的值
+     */
+    default Long increment(String key) {
+        throw new RuntimeException("未实现[increment]方法");
+    }
+
+    /**
+     * 自增
+     * @param key
+     * @param delta 增量
+     * @return 自增后的值
+     */
+    default Long increment(String key, long delta) {
+        throw new RuntimeException("未实现[increment]方法");
+    }
+
+    /**
+     * 执行redis脚本
+     * @param script 脚本
+     * @param keys 键列表
+     * @param args 参数
+     * @param <T> 返回类型
+     * @return
+     */
+    default <T> T execute(RedisScript<T> script, List<String> keys, Object... args) {
+        throw new RuntimeException("未实现[execute]方法");
+    }
+
+    /**
+     * set add方法
+     * @param key
+     * @param values
+     */
+    default void setAdd(String key, Object... values) {
+        throw new RuntimeException("未实现[setAdd]方法");
+    }
+
+    /**
+     * set remove方法
+     * @param key
+     * @param values
+     */
+    default void setRemove(String key, Object... values) {
+        throw new RuntimeException("未实现[setRemove]方法");
+    }
+
+
 }

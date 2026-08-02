@@ -1,19 +1,3 @@
-/*
- Navicat Premium Dump SQL
-
- Source Server         : 127.0.0.1-mysql8.0
- Source Server Type    : MySQL
- Source Server Version : 80033 (8.0.33)
- Source Host           : localhost:3306
- Source Schema         : wl-admin
-
- Target Server Type    : MySQL
- Target Server Version : 80033 (8.0.33)
- File Encoding         : 65001
-
- Date: 01/12/2024 14:56:45
-*/
-
 SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS = 0;
 
@@ -402,7 +386,7 @@ INSERT INTO `qrtz_triggers` VALUES ('Quartz', '1763623755297148929', '01', '1763
 -- ----------------------------
 DROP TABLE IF EXISTS `schedule_job`;
 CREATE TABLE `schedule_job`  (
-  `ID` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
+  `id` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
   `task_name` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '任务名',
   `task_group` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '任务分组',
   `bean_name` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '类名称',
@@ -418,7 +402,7 @@ CREATE TABLE `schedule_job`  (
   `create_time` datetime NULL DEFAULT NULL COMMENT '创建时间',
   `update_id` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '修改人',
   `update_time` datetime NULL DEFAULT NULL COMMENT '修改时间',
-  PRIMARY KEY (`ID`) USING BTREE
+  PRIMARY KEY (`id`) USING BTREE
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '定时任务表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
@@ -1042,7 +1026,7 @@ CREATE TABLE `sys_user`  (
   `phone` varchar(11) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '手机号',
   `email` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '邮箱',
   `age` int NULL DEFAULT NULL COMMENT '年龄',
-  `sex` varchar(1) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '性别 0 女 1 男',
+  `sex` int NULL DEFAULT NULL COMMENT '性别 0 女 1 男',
   `status` varchar(1) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT '0' COMMENT '0 正常 1 禁用  2 拉黑 3 锁定 4 过期',
   `profile` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '个人简介',
   `remarks` varchar(1024) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '备注',
@@ -1067,9 +1051,10 @@ INSERT INTO `sys_user` VALUES ('1814892184402198530', '李四', 'lisi', '$2a$10$
 -- ----------------------------
 DROP TABLE IF EXISTS `sys_user_position`;
 CREATE TABLE `sys_user_position`  (
-  `id` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
+  `id` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
   `uid` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '用户id',
-  `pid` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '职位id'
+  `pid` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '职位id',
+  PRIMARY KEY (`id`) USING BTREE
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '用户职位关联表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------

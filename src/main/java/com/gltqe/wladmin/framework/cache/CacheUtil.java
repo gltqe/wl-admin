@@ -2,7 +2,10 @@ package com.gltqe.wladmin.framework.cache;
 
 import cn.hutool.extra.spring.SpringUtil;
 import com.alibaba.fastjson2.JSONObject;
+import org.springframework.data.redis.core.script.RedisScript;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -75,7 +78,15 @@ public class CacheUtil {
     }
 
     /**
-     * 获取所有符合条件的key（本地缓存只支持 * ）
+     * 批量删除
+     * @param keys
+     */
+    public static void delete(Collection<String> keys) {
+        cacheService.delete(keys);
+    }
+
+    /**
+     * 获取所有符合条件的key（本地缓存支持 * ? 等通配符）
      * @param key
      * @return
      */
@@ -110,7 +121,7 @@ public class CacheUtil {
      * @param timeUnit
      * @return
      */
-    public boolean setIfAbsent(String key, Object value, long ttl, TimeUnit timeUnit) {
+    public static boolean setIfAbsent(String key, Object value, long ttl, TimeUnit timeUnit) {
         return cacheService.setIfAbsent(key, value, ttl, timeUnit);
     }
 
@@ -120,7 +131,67 @@ public class CacheUtil {
      * @param hashKey
      * @param value
      */
-    public void hashPut(String key, String hashKey, Object value) {
+    public static void hashPut(String key, String hashKey, Object value) {
         cacheService.hashPut(key, hashKey, value);
     }
+
+    /**
+     * hash get方法
+     * @param key
+     * @param hashKey
+     * @return
+     */
+    public static Object hashGet(String key, String hashKey) {
+        return cacheService.hashGet(key, hashKey);
+    }
+
+    /**
+     * 自增 每次加1
+     * @param key
+     * @return
+     */
+    public static Long increment(String key) {
+        return cacheService.increment(key);
+    }
+
+    /**
+     * 自增
+     * @param key
+     * @param delta
+     * @return
+     */
+    public static Long increment(String key, long delta) {
+        return cacheService.increment(key, delta);
+    }
+
+    /**
+     * 执行redis脚本
+     * @param script
+     * @param keys
+     * @param args
+     * @return
+     */
+    public static <T> T execute(RedisScript<T> script, List<String> keys, Object... args) {
+        return cacheService.execute(script, keys, args);
+    }
+
+    /**
+     * set add方法
+     * @param key
+     * @param values
+     */
+    public static void setAdd(String key, Object... values) {
+        cacheService.setAdd(key, values);
+    }
+
+    /**
+     * set remove方法
+     * @param key
+     * @param values
+     */
+    public static void setRemove(String key, Object... values) {
+        cacheService.setRemove(key, values);
+    }
+
+
 }

@@ -20,7 +20,7 @@ public class CacheObj<K, V> {
     private V value;
 
     /**
-     * 过期时长 -1 表示永不过期
+     * 过期时长(毫秒) -1 表示永不过期
      */
     private long ttl;
 
@@ -33,7 +33,8 @@ public class CacheObj<K, V> {
     public CacheObj(K key, V value, long ttl) {
         this.key = key;
         this.value = value;
-        this.ttl = ttl;
+        // 入参单位为秒,内部统一毫秒存储; ttl <= 0 表示永不过期
+        this.ttl = ttl <= 0 ? -1 : ttl * 1000;
         this.lastGet = System.currentTimeMillis();
     }
 
@@ -44,14 +45,14 @@ public class CacheObj<K, V> {
         return false;
     }
 
-    public V get(boolean autoExt){
-        if (autoExt){
+    public V get(boolean autoExt) {
+        if (autoExt) {
             this.lastGet = System.currentTimeMillis();
         }
         return this.value;
     }
 
-    public V get(){
+    public V get() {
         return get(false);
     }
 }
